@@ -1,0 +1,22 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Kaarigar profile and craft images
+    match /kaarigars/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Event banners and photos
+    match /events/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.auth != null; // Admin write protected via server/token
+    }
+
+    // Application uploads
+    match /applications/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+  }
+}
