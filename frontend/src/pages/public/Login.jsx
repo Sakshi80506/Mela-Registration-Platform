@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Sparkles, LogIn, Lock, Mail, ArrowRight, ShieldCheck, Palette, Ticket } from 'lucide-react';
+import { Sparkles, LogIn, Lock, Mail, ArrowRight, ShieldCheck, Palette, Ticket, KeyRound, MailCheck, HelpCircle, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import FormInput from '../../components/common/FormInput';
@@ -41,7 +41,13 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login, currentUser, role } = useAuth();
+  // Forgot password state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const { login, resetPassword, currentUser, role } = useAuth();
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,6 +99,29 @@ const Login = () => {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendResetEmail = async (e) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      showError('Please enter your registered email address.');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await resetPassword(resetEmail);
+      setResetSent(true);
+      showSuccess(`Password reset link sent to ${resetEmail}! Check your inbox.`);
+    } catch (err) {
+      console.error('Password reset error:', err);
+      if (err.code === 'auth/user-not-found') {
+        showError('No registered account found with this email address.');
+      } else {
+        showError(err.message || 'Failed to send password reset link.');
+      }
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -180,15 +209,34 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
             />
-            <FormInput
-              id="login-password"
-              type="password"
-              label="Password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetEmail(email);
+                    setResetSent(false);
+                    setShowForgotModal(true);
+                  }}
+                  style={{
+                    background: 'none', border: 'none', color: 'var(--color-primary)',
+                    fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', padding: 0
+                  }}
+                >
+                  Forgot Password?
+                </button>
+              </div>
+              <FormInput
+                id="login-password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
 
             <button
               type="submit"
@@ -215,9 +263,107 @@ const Login = () => {
             </Link>
           </div>
         </div>
+
+        {/* Forgot Password Modal */}
+        {showForgotModal && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: 'rgba(0, 0, 0, 0.6)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+            padding: '1rem'
+          }}>
+            <div className="card" style={{
+              maxWidth: '440px', width: '100%', padding: '2rem',
+              position: 'relative', boxShadow: 'var(--shadow-xl)',
+              animation: 'fadeIn 0.2s ease'
+            }}>
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                style={{
+                  position: 'absolute', top: '1.25rem', right: '1.25rem',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: 'var(--color-text-muted)'
+                }}
+                aria-label="Close"
+              >
+                <X size={20} />
+              </button>
+
+              <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                <div style={{
+                  width: '50px', height: '50px', borderRadius: '50%',
+                  background: 'var(--color-bg-alt)', color: 'var(--color-primary)',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: '0.75rem'
+                }}>
+                  <KeyRound size={24} color="var(--color-secondary-dark)" />
+                </div>
+                <h2 style={{ fontSize: '1.35rem', color: 'var(--color-primary)', margin: 0 }}>
+                  Reset Your Password
+                </h2>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '0.35rem' }}>
+                  Enter your registered email address to receive a secure password reset link.
+                </p>
+              </div>
+
+              {resetSent ? (
+                <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+                  <MailCheck size={44} color="var(--color-success)" style={{ margin: '0 auto 0.75rem' }} />
+                  <h3 style={{ fontSize: '1.1rem', color: 'var(--color-success)', marginBottom: '0.4rem' }}>
+                    Reset Link Dispatched!
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+                    We've emailed a password recovery link to <strong>{resetEmail}</strong>. Follow the instructions in the email to set a new password.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-block"
+                    onClick={() => setShowForgotModal(false)}
+                  >
+                    Back to Login
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSendResetEmail}>
+                  <FormInput
+                    id="reset-email"
+                    type="email"
+                    label="Registered Email Address"
+                    required
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    placeholder="you@example.com"
+                  />
+
+                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem' }}>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{ flex: 1 }}
+                      onClick={() => setShowForgotModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      style={{ flex: 1 }}
+                      disabled={resetLoading}
+                    >
+                      {resetLoading ? 'Sending Link...' : 'Send Reset Link'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 };
 
 export default Login;
+

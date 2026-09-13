@@ -6,10 +6,17 @@ import {
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
-  signOut,
+  signOut, 
+  sendPasswordResetEmail,
+  deleteUser,
   doc, 
   getDoc, 
-  setDoc,
+  setDoc, 
+  deleteDoc,
+  collection,
+  query,
+  where,
+  getDocs,
   updateProfile
 } from '../services/firebase';
 import { kaarigarService } from '../services/kaarigarService';
@@ -277,6 +284,66 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Send password reset email
+  const resetPassword = async (email) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  };
+
+  // Delete account and all associated user data
+  const deleteAccount = async () => {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+
+    try {
+      // 1. Delete Firestore user document
+      try {
+        await deleteDoc(doc(db, 'users', uid));
+      } catch (e) {
+        console.warn('User document delete error:', e);
+      }
+
+      // 2. Delete artisan profile if exists
+      try {
+        await deleteDoc(doc(db, 'kaarigars', uid));
+      } catch (e) {}
+
+      // 3. Delete artisan applications if any
+      try {
+        const appsQ = query(collection(db, 'kaarigarApplications'), where('kaarigarId', '==', uid));
+        const appsSnap = await getDocs(appsQ);
+        for (const d of appsSnap.docs) {
+          await deleteDoc(doc(db, 'kaarigarApplications', d.id));
+        }
+      } catch (e) {}
+
+      // 4. Delete visitor registrations if any
+      try {
+        const visQ = query(collection(db, 'visitorRegistrations'), where('visitorId', '==', uid));
+        const visSnap = await getDocs(visQ);
+        for (const d of visSnap.docs) {
+          await deleteDoc(doc(db, 'visitorRegistrations', d.id));
+        }
+      } catch (e) {}
+
+      // 5. Delete Firebase Auth user
+      localStorage.removeItem('active_portal_role');
+      await deleteUser(currentUser);
+
+      // 6. Reset local state
+      setCurrentUser(null);
+      setUserProfile(null);
+      setKaarigarProfile(null);
+    } catch (error) {
+      console.error('Delete account error:', error);
+      throw error;
+    }
+  };
+
   const value = {
     currentUser,
     userProfile,
@@ -288,6 +355,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    resetPassword,
+    deleteAccount,
     switchRole,
     logout,
     refreshKaarigarProfile,

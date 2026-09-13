@@ -1,16 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, User, Mail, Sparkles, Key, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Shield, User, Mail, Sparkles, Key, CheckCircle2, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import FormInput from '../../components/common/FormInput';
 
 const AdminProfile = () => {
-  const { currentUser, userProfile } = useAuth();
-  const { showSuccess } = useToast();
+  const { currentUser, userProfile, deleteAccount } = useAuth();
+  const { showSuccess, showError } = useToast();
+  const navigate = useNavigate();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     document.title = "Admin Profile | Kaarigar Expo";
   }, []);
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleting(true);
+      await deleteAccount();
+      showSuccess('Your Admin account has been deleted.');
+      navigate('/');
+    } catch (err) {
+      console.error('Delete account error:', err);
+      showError(err.message || 'Failed to delete account. You may need to re-login first.');
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
@@ -101,6 +120,75 @@ const AdminProfile = () => {
           </div>
         </div>
       </div>
+
+      {/* Danger Zone: Delete Account */}
+      <div className="card" style={{ marginTop: '2rem', padding: '1.75rem 2rem', border: '1px solid rgba(198, 40, 40, 0.3)', background: '#FFF8F8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-danger)', fontWeight: 700, fontSize: '0.95rem' }}>
+              <Trash2 size={18} /> Danger Zone: Delete Account
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '0.2rem', marginBottom: 0 }}>
+              Permanently delete your Admin account credentials and platform access. This action cannot be undone.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="btn btn-outline"
+            style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
+          >
+            <Trash2 size={16} /> Delete Account
+          </button>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.6)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div className="card" style={{ maxWidth: '440px', width: '100%', padding: '2rem', textAlign: 'center' }}>
+            <div style={{
+              width: '56px', height: '56px', borderRadius: '50%',
+              background: '#FFEBEE', color: 'var(--color-danger)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: '1rem'
+            }}>
+              <AlertTriangle size={28} />
+            </div>
+            <h2 style={{ fontSize: '1.4rem', color: 'var(--color-danger)', marginBottom: '0.5rem' }}>
+              Delete Admin Account?
+            </h2>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+              Are you sure you want to permanently delete your administrator account? You will immediately lose access to the admin management dashboard.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ flex: 1 }}
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ flex: 1, background: 'var(--color-danger)' }}
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Yes, Delete Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

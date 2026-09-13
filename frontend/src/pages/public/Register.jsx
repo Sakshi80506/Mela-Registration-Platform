@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, UserPlus, Palette, Ticket, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Sparkles, UserPlus, Palette, Ticket, ShieldCheck, ArrowRight, CheckCircle2, XCircle, Lock, KeyRound } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import FormInput from '../../components/common/FormInput';
@@ -49,6 +49,13 @@ const Register = () => {
     document.title = "Register | Kaarigar Expo";
   }, []);
 
+  // Validation rules
+  const cleanPhone = phone.trim().replace(/[\s-+()]/g, '');
+  const isPhoneValid = /^[6-9]\d{9}$/.test(cleanPhone);
+  const isMinLength = password.length >= 6;
+  const hasNumber = /\d/.test(password);
+  const passwordsMatch = Boolean(password && confirmPassword && password === confirmPassword);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -57,19 +64,29 @@ const Register = () => {
       return;
     }
 
-    if (password.length < 6) {
+    if (!isPhoneValid) {
+      showError('Please enter a valid 10-digit Indian mobile number (starting with 6, 7, 8, or 9).');
+      return;
+    }
+
+    if (!isMinLength) {
       showError('Password must be at least 6 characters long.');
       return;
     }
 
-    if (password !== confirmPassword) {
-      showError('Passwords do not match.');
+    if (!hasNumber) {
+      showError('Password must contain at least one numeric digit (0-9).');
+      return;
+    }
+
+    if (!passwordsMatch) {
+      showError('Passwords do not match. Please re-enter your password.');
       return;
     }
 
     setLoading(true);
     try {
-      await register(name, email, password, role, phone);
+      await register(name, email, password, role, cleanPhone);
       const roleLabel = role === 'admin' ? 'Admin' : role === 'kaarigar' ? 'Kaarigar' : 'Visitor';
       showSuccess(`Account created successfully! Welcome to Kaarigar Expo as ${roleLabel}.`);
       
@@ -169,11 +186,12 @@ const Register = () => {
             <FormInput
               id="register-phone"
               type="tel"
-              label="Phone Number"
+              label="Phone Number (10 Digits)"
               required
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="9876543210"
+              maxLength={10}
             />
           </div>
 
@@ -185,7 +203,7 @@ const Register = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Min 6 characters"
+              placeholder="Min 6 chars (e.g. Mela#2026)"
             />
             <FormInput
               id="register-confirm-password"
@@ -197,6 +215,44 @@ const Register = () => {
               placeholder="Re-enter password"
             />
           </div>
+
+          {/* Real-time Rules Checklist */}
+          {(phone || password) && (
+            <div style={{
+              background: 'var(--color-bg-alt)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.75rem 1rem',
+              marginBottom: '1rem',
+              fontSize: '0.8rem'
+            }}>
+              <div style={{ fontWeight: 700, color: 'var(--color-primary)', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <KeyRound size={13} /> Account Requirements:
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0.25rem' }}>
+                {phone && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: isPhoneValid ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                    {isPhoneValid ? <CheckCircle2 size={13} color="var(--color-success)" /> : <XCircle size={13} color="var(--color-danger)" />}
+                    <span>{isPhoneValid ? 'Valid 10-digit Indian mobile number' : 'Mobile number must be 10 digits starting with 6, 7, 8, or 9'}</span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: isMinLength ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+                  {isMinLength ? <CheckCircle2 size={13} color="var(--color-success)" /> : <XCircle size={13} />}
+                  <span>Password: at least 6 characters long</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: hasNumber ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
+                  {hasNumber ? <CheckCircle2 size={13} color="var(--color-success)" /> : <XCircle size={13} />}
+                  <span>Password: contains at least one number (0-9)</span>
+                </div>
+                {confirmPassword && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: passwordsMatch ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                    {passwordsMatch ? <CheckCircle2 size={13} color="var(--color-success)" /> : <XCircle size={13} color="var(--color-danger)" />}
+                    <span>{passwordsMatch ? 'Passwords match' : 'Passwords do not match'}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"

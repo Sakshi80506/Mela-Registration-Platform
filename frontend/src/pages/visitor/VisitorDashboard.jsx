@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Ticket, Compass, Calendar, MapPin, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Ticket, Compass, Calendar, MapPin, CheckCircle2, ArrowRight, Trash2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 import { visitorService } from '../../services/visitorService';
 import { eventService } from '../../services/eventService';
 import DashboardCard from '../../components/cards/DashboardCard';
@@ -10,10 +11,14 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
 
 const VisitorDashboard = () => {
-  const { currentUser, userProfile } = useAuth();
+  const { currentUser, userProfile, deleteAccount } = useAuth();
+  const { showSuccess, showError } = useToast();
+  const navigate = useNavigate();
   const [registrations, setRegistrations] = useState([]);
   const [upcomingMelas, setUpcomingMelas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     document.title = "Visitor Dashboard | Kaarigar Expo";
@@ -21,6 +26,21 @@ const VisitorDashboard = () => {
       loadVisitorData();
     }
   }, [currentUser]);
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleting(true);
+      await deleteAccount();
+      showSuccess('Your Visitor account and passes have been permanently deleted.');
+      navigate('/');
+    } catch (err) {
+      console.error('Delete account error:', err);
+      showError(err.message || 'Failed to delete account. You may need to log in again first.');
+    } finally {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
+  };
 
   const loadVisitorData = async () => {
     try {
@@ -158,6 +178,75 @@ const VisitorDashboard = () => {
           ))}
         </div>
       </div>
+
+      {/* Danger Zone: Delete Account */}
+      <div className="card" style={{ marginTop: '3rem', padding: '1.75rem 2rem', border: '1px solid rgba(198, 40, 40, 0.3)', background: '#FFF8F8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-danger)', fontWeight: 700, fontSize: '0.95rem' }}>
+              <Trash2 size={18} /> Danger Zone: Delete Account
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '0.2rem', marginBottom: 0 }}>
+              Permanently delete your Visitor account and all registered Mela entry passes. This action cannot be undone.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="btn btn-outline"
+            style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
+          >
+            <Trash2 size={16} /> Delete Account
+          </button>
+        </div>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.6)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          padding: '1rem'
+        }}>
+          <div className="card" style={{ maxWidth: '440px', width: '100%', padding: '2rem', textAlign: 'center' }}>
+            <div style={{
+              width: '56px', height: '56px', borderRadius: '50%',
+              background: '#FFEBEE', color: 'var(--color-danger)',
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: '1rem'
+            }}>
+              <AlertTriangle size={28} />
+            </div>
+            <h2 style={{ fontSize: '1.4rem', color: 'var(--color-danger)', marginBottom: '0.5rem' }}>
+              Delete Visitor Account?
+            </h2>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+              Are you sure you want to permanently delete your visitor account? All your booked entry passes and profile information will be removed immediately.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                style={{ flex: 1 }}
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                style={{ flex: 1, background: 'var(--color-danger)' }}
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Yes, Delete Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

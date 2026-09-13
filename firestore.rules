@@ -23,7 +23,7 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow write, create, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
     }
 
     // Events Collection
@@ -43,7 +43,11 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid || 
         isAdmin()
       );
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated() && (
+        kaarigarId == request.auth.uid || 
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
     }
 
     // Kaarigar Applications
@@ -55,7 +59,10 @@ service cloud.firestore {
         request.resource.data.kaarigarId == request.auth.uid || 
         isAdmin()
       );
-      allow delete: if isAdmin();
+      allow delete: if isAuthenticated() && (
+        resource.data.kaarigarId == request.auth.uid || 
+        isAdmin()
+      );
     }
 
     // Visitor Registrations (RSVPs)
