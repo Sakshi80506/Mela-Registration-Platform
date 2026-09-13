@@ -16,6 +16,64 @@ import {
 
 const KAARIGARS_COLLECTION = 'kaarigars';
 
+// Convert File to compressed Data URL fallback if Firebase Storage is unavailable or hangs
+const fileToOptimizedDataUrl = (file, maxWidth = 600, maxHeight = 600, quality = 0.75) => {
+  return new Promise((resolve) => {
+    if (!file) return resolve('');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch (err) {
+          resolve(e.target.result);
+        }
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+};
+
+const uploadWithFallback = async (path, file, timeoutMs = 3000) => {
+  if (!file) return '';
+  try {
+    const pRef = storageRef(storage, path);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Storage upload timed out')), timeoutMs)
+    );
+    const snap = await Promise.race([uploadBytes(pRef, file), timeoutPromise]);
+    const downloadUrl = await Promise.race([getDownloadURL(snap.ref), timeoutPromise]);
+    return downloadUrl;
+  } catch (err) {
+    console.warn(`Storage upload for ${path} bypassed or timed out (${err.message}). Using optimized fallback image.`);
+    return await fileToOptimizedDataUrl(file);
+  }
+};
+
 export const kaarigarService = {
   // Get all registered kaarigars
   async getAllKaarigars(craftTypeFilter = null) {
@@ -35,17 +93,26 @@ export const kaarigarService = {
 
   // Get kaarigar profile by auth userId
   async getKaarigarByUserId(userId) {
+    if (!userId) return null;
     try {
+      // 1. Direct document check by ID == userId
+      const directRef = doc(db, KAARIGARS_COLLECTION, userId);
+      const directSnap = await getDoc(directRef);
+      if (directSnap.exists()) {
+        return { id: directSnap.id, ...directSnap.data() };
+      }
+
+      // 2. Query fallback where userId field matches
       const q = query(collection(db, KAARIGARS_COLLECTION), where('userId', '==', userId));
       const snapshot = await getDocs(q);
-      if (snapshot.empty) {
-        return null;
+      if (!snapshot.empty) {
+        const d = snapshot.docs[0];
+        return { id: d.id, ...d.data() };
       }
-      const doc = snapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
+      return null;
     } catch (error) {
-      console.error('Error fetching profile by userId:', error);
-      throw error;
+      console.warn('Query for artisan profile fell back or warning:', error.message);
+      return null;
     }
   },
 
@@ -70,29 +137,31 @@ export const kaarigarService = {
       let profilePhotoUrl = profileData.profilePhoto || '';
       let craftPhotoUrl = profileData.craftPhoto || '';
 
-      // Upload profile image to Firebase Storage if provided
+      // Upload profile image to Firebase Storage (with safe timeout & fallback)
       if (profilePhotoFile) {
-        try {
-          const pRef = storageRef(storage, `kaarigars/${userId}/profile_${Date.now()}`);
-          const snap = await uploadBytes(pRef, profilePhotoFile);
-          profilePhotoUrl = await getDownloadURL(snap.ref);
-        } catch (e) {
-          console.warn('Storage upload fallback:', e);
+        const uploadedProfileUrl = await uploadWithFallback(
+          `kaarigars/${userId}/profile_${Date.now()}`,
+          profilePhotoFile
+        );
+        if (uploadedProfileUrl) {
+          profilePhotoUrl = uploadedProfileUrl;
         }
       }
 
-      // Upload craft image to Firebase Storage if provided
+      // Upload craft image to Firebase Storage (with safe timeout & fallback)
       if (craftPhotoFile) {
-        try {
-          const cRef = storageRef(storage, `kaarigars/${userId}/craft_${Date.now()}`);
-          const snap = await uploadBytes(cRef, craftPhotoFile);
-          craftPhotoUrl = await getDownloadURL(snap.ref);
-        } catch (e) {
-          console.warn('Storage upload fallback:', e);
+        const uploadedCraftUrl = await uploadWithFallback(
+          `kaarigars/${userId}/craft_${Date.now()}`,
+          craftPhotoFile
+        );
+        if (uploadedCraftUrl) {
+          craftPhotoUrl = uploadedCraftUrl;
         }
       }
 
       const existing = await this.getKaarigarByUserId(userId);
+      const docId = existing ? existing.id : userId;
+
       const payload = {
         ...profileData,
         userId,
@@ -101,16 +170,13 @@ export const kaarigarService = {
         updatedAt: new Date().toISOString()
       };
 
-      if (existing) {
-        const docRef = doc(db, KAARIGARS_COLLECTION, existing.id);
-        await updateDoc(docRef, payload);
-        return { id: existing.id, ...payload };
-      } else {
+      if (!existing) {
         payload.createdAt = new Date().toISOString();
-        const docRef = doc(collection(db, KAARIGARS_COLLECTION));
-        await setDoc(docRef, payload);
-        return { id: docRef.id, ...payload };
       }
+
+      const docRef = doc(db, KAARIGARS_COLLECTION, docId);
+      await setDoc(docRef, payload, { merge: true });
+      return { id: docId, ...payload };
     } catch (error) {
       console.error('Error saving kaarigar profile:', error);
       throw error;

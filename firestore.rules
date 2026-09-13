@@ -22,30 +22,39 @@ service cloud.firestore {
     // Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isUser(userId) || isAdmin();
+      allow write, create, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
     // Events Collection
     match /events/{eventId} {
       allow read: if true; // Publicly viewable
-      allow create, update, delete: if isAdmin();
+      allow create, update, delete, write: if isAdmin();
     }
 
     // Kaarigars Collection (Artisan profiles)
     match /kaarigars/{kaarigarId} {
       allow read: if true; // Publicly viewable
       allow create: if isAuthenticated();
-      allow update: if isUser(resource.data.userId) || isAdmin();
+      allow update, write: if isAuthenticated() && (
+        kaarigarId == request.auth.uid || 
+        resource == null || 
+        resource.data.userId == request.auth.uid || 
+        request.resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
       allow delete: if isAdmin();
     }
 
     // Kaarigar Applications
     match /kaarigarApplications/{applicationId} {
       allow read: if isAuthenticated();
-      allow create: if isKaarigar() || isAuthenticated();
-      allow update: if isAdmin(); // Only admin can approve/reject
+      allow create: if isAuthenticated();
+      allow update, write: if isAuthenticated() && (
+        resource.data.kaarigarId == request.auth.uid || 
+        request.resource.data.kaarigarId == request.auth.uid || 
+        isAdmin()
+      );
       allow delete: if isAdmin();
     }
 
@@ -53,7 +62,7 @@ service cloud.firestore {
     match /visitorRegistrations/{registrationId} {
       allow read: if isAuthenticated() && (resource.data.visitorId == request.auth.uid || isAdmin());
       allow create: if true; // Allows registered or guest visitors
-      allow delete: if isAuthenticated() && (resource.data.visitorId == request.auth.uid || isAdmin());
+      allow update, write, delete: if isAuthenticated() && (resource.data.visitorId == request.auth.uid || isAdmin());
     }
   }
 }

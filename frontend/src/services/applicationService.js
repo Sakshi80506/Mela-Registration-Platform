@@ -18,6 +18,64 @@ const APPLICATIONS_COLLECTION = 'kaarigarApplications';
 const EVENTS_COLLECTION = 'events';
 const KAARIGARS_COLLECTION = 'kaarigars';
 
+// Convert File to compressed Data URL fallback if Firebase Storage is unavailable or hangs
+const fileToOptimizedDataUrl = (file, maxWidth = 800, maxHeight = 800, quality = 0.75) => {
+  return new Promise((resolve) => {
+    if (!file) return resolve('');
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch (err) {
+          resolve(e.target.result);
+        }
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+};
+
+const uploadWithFallback = async (path, file, timeoutMs = 3000) => {
+  if (!file) return '';
+  try {
+    const pRef = storageRef(storage, path);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Storage upload timed out')), timeoutMs)
+    );
+    const snap = await Promise.race([uploadBytes(pRef, file), timeoutPromise]);
+    const downloadUrl = await Promise.race([getDownloadURL(snap.ref), timeoutPromise]);
+    return downloadUrl;
+  } catch (err) {
+    console.warn(`Storage upload for ${path} bypassed or timed out (${err.message}). Using optimized fallback image.`);
+    return await fileToOptimizedDataUrl(file);
+  }
+};
+
 export const applicationService = {
   // Kaarigar submits application for a mela
   async applyForMela(kaarigarId, eventId, applicationData, craftImageFile = null) {
@@ -35,12 +93,12 @@ export const applicationService = {
 
       let craftImageUrl = applicationData.craftImage || '';
       if (craftImageFile) {
-        try {
-          const cRef = storageRef(storage, `applications/${kaarigarId}/${eventId}_${Date.now()}`);
-          const snap = await uploadBytes(cRef, craftImageFile);
-          craftImageUrl = await getDownloadURL(snap.ref);
-        } catch (e) {
-          console.warn('Storage upload fallback:', e);
+        const uploadedUrl = await uploadWithFallback(
+          `applications/${kaarigarId}/${eventId}_${Date.now()}`,
+          craftImageFile
+        );
+        if (uploadedUrl) {
+          craftImageUrl = uploadedUrl;
         }
       }
 
