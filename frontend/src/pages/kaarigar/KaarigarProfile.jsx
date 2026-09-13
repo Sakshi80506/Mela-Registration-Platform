@@ -54,17 +54,28 @@ const KaarigarProfile = () => {
     if (!currentUser) return;
     try {
       setLoading(true);
-      const kProfile = kaarigarProfile || await kaarigarService.getKaarigarByUserId(currentUser.uid);
+      // Always fetch the freshest artisan profile directly from Firestore
+      const kProfile = await kaarigarService.getKaarigarByUserId(currentUser.uid);
       
-      setName(kProfile?.name || userProfile?.name || currentUser.displayName || '');
-      setEmail(kProfile?.email || currentUser.email || '');
-      setPhone(kProfile?.phone || userProfile?.phone || '');
-      setCraftType(kProfile?.craftType || '');
-      setDescription(kProfile?.description || '');
-      setCity(kProfile?.city || '');
-      setState(kProfile?.state || '');
-      setProfilePhotoUrl(kProfile?.profilePhoto || '');
-      setCraftPhotoUrl(kProfile?.craftPhoto || '');
+      const currentName = kProfile?.name || userProfile?.name || currentUser.displayName || '';
+      const currentEmail = kProfile?.email || userProfile?.email || currentUser.email || '';
+      const currentPhone = kProfile?.phone || userProfile?.phone || '';
+      const currentCraft = kProfile?.craftType || '';
+      const currentDesc = kProfile?.description || '';
+      const currentCity = kProfile?.city || userProfile?.city || '';
+      const currentState = kProfile?.state || userProfile?.state || '';
+      const currentProfilePhoto = kProfile?.profilePhoto || '';
+      const currentCraftPhoto = kProfile?.craftPhoto || '';
+
+      setName(currentName);
+      setEmail(currentEmail);
+      setPhone(currentPhone);
+      setCraftType(currentCraft);
+      setDescription(currentDesc);
+      setCity(currentCity);
+      setState(currentState);
+      setProfilePhotoUrl(currentProfilePhoto);
+      setCraftPhotoUrl(currentCraftPhoto);
     } catch (err) {
       console.error('Failed to load profile:', err);
     } finally {

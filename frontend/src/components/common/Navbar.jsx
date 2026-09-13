@@ -14,7 +14,7 @@ const ROLE_META = {
 };
 
 const Navbar = () => {
-  const { currentUser, userProfile, role, logout } = useAuth();
+  const { currentUser, userProfile, role, logout, switchRole } = useAuth();
   const { showSuccess } = useToast();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -25,6 +25,18 @@ const Navbar = () => {
       showSuccess('Logged out successfully');
       setMobileMenuOpen(false);
       navigate('/');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleToggleRole = async () => {
+    if (role === 'admin') return;
+    const targetRole = role === 'kaarigar' ? 'visitor' : 'kaarigar';
+    try {
+      await switchRole(targetRole);
+      showSuccess(`Switched to ${targetRole === 'kaarigar' ? 'Kaarigar' : 'Visitor'} Portal`);
+      navigate(targetRole === 'kaarigar' ? '/kaarigar/dashboard' : '/visitor/dashboard');
     } catch (e) {
       console.error(e);
     }
@@ -92,17 +104,26 @@ const Navbar = () => {
           <div className="nav-actions">
             {currentUser ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                {/* Role badge */}
+                {/* Role badge with switch capability */}
                 {roleMeta && (
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: '0.35rem',
-                    background: roleMeta.bg, color: roleMeta.color,
-                    padding: '0.25rem 0.65rem', borderRadius: 'var(--radius-full)',
-                    fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${roleMeta.color}22`
-                  }}>
+                  <button
+                    onClick={role !== 'admin' ? handleToggleRole : undefined}
+                    title={role !== 'admin' ? `Click to switch to ${role === 'kaarigar' ? 'Visitor' : 'Kaarigar'} mode` : 'Administrator'}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.35rem',
+                      background: roleMeta.bg, color: roleMeta.color,
+                      padding: '0.25rem 0.65rem', borderRadius: 'var(--radius-full)',
+                      fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${roleMeta.color}22`,
+                      cursor: role !== 'admin' ? 'pointer' : 'default',
+                      fontFamily: 'inherit'
+                    }}
+                  >
                     <RoleIcon size={12} />
                     {roleMeta.label}
-                  </div>
+                    {role !== 'admin' && (
+                      <span style={{ fontSize: '0.65rem', opacity: 0.7, marginLeft: '2px' }}>⇄</span>
+                    )}
+                  </button>
                 )}
                 <Link to={getDashboardPath()} className="btn btn-outline btn-sm">
                   <LayoutDashboard size={16} />

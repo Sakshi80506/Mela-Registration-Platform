@@ -48,21 +48,22 @@ const Login = () => {
 
   useEffect(() => {
     document.title = "Login | Kaarigar Expo";
-    if (currentUser && role) {
-      redirectByRole(role);
-    }
-  }, [currentUser, role]);
+  }, []);
 
   const redirectByRole = (userRole) => {
+    const r = (userRole || 'visitor').toLowerCase();
     const from = location.state?.from?.pathname;
-    if (from) {
+
+    // Only redirect to 'from' if it matches the chosen role's portal
+    if (from && from.startsWith(`/${r}`)) {
       navigate(from, { replace: true });
       return;
     }
-    if (userRole === 'admin') {
+
+    if (r === 'admin') {
       navigate('/admin/dashboard', { replace: true });
-    } else if (userRole === 'kaarigar') {
-      navigate('/kaarigar/dashboard', { replace: true });
+    } else if (r === 'kaarigar') {
+      navigate('/kaarigar/profile', { replace: true });
     } else {
       navigate('/visitor/dashboard', { replace: true });
     }
@@ -76,9 +77,9 @@ const Login = () => {
     }
     setLoading(true);
     try {
-      const profile = await login(email, password);
-      showSuccess(`Welcome back, ${profile?.name || 'User'}!`);
-      redirectByRole(profile?.role || 'visitor');
+      const profile = await login(email, password, activeTab);
+      showSuccess(`Welcome back, ${profile?.name || 'User'}! Signed in to ${activeTab.toUpperCase()} portal.`);
+      redirectByRole(activeTab);
     } catch (err) {
       console.error('Login error:', err);
       if (
