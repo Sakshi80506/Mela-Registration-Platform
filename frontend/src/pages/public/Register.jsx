@@ -1,12 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sparkles, UserPlus, Palette, Ticket, ArrowRight } from 'lucide-react';
+import { Sparkles, UserPlus, Palette, Ticket, ShieldCheck, ArrowRight } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import FormInput from '../../components/common/FormInput';
 
+const ROLES = [
+  {
+    key: 'admin',
+    label: 'Admin',
+    icon: ShieldCheck,
+    tagline: 'Platform / Organizer',
+    color: 'var(--color-primary)',
+    bg: 'var(--color-bg-alt)'
+  },
+  {
+    key: 'kaarigar',
+    label: 'Kaarigar',
+    icon: Palette,
+    tagline: 'Artisan / Exhibitor',
+    color: 'var(--color-secondary-dark)',
+    bg: 'var(--color-bg-alt)'
+  },
+  {
+    key: 'visitor',
+    label: 'Visitor',
+    icon: Ticket,
+    tagline: 'Attendee / Buyer',
+    color: 'var(--color-success)',
+    bg: 'var(--color-bg-alt)'
+  }
+];
+
 const Register = () => {
-  const [role, setRole] = useState('kaarigar'); // default kaarigar
+  const [role, setRole] = useState('kaarigar');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -43,9 +70,12 @@ const Register = () => {
     setLoading(true);
     try {
       await register(name, email, password, role, phone);
-      showSuccess(`Account created successfully! Welcome to Kaarigar Expo.`);
+      const roleLabel = role === 'admin' ? 'Admin' : role === 'kaarigar' ? 'Kaarigar' : 'Visitor';
+      showSuccess(`Account created successfully! Welcome to Kaarigar Expo as ${roleLabel}.`);
       
-      if (role === 'kaarigar') {
+      if (role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (role === 'kaarigar') {
         navigate('/kaarigar/profile', { replace: true });
       } else {
         navigate('/visitor/dashboard', { replace: true });
@@ -62,9 +92,11 @@ const Register = () => {
     }
   };
 
+  const selectedRole = ROLES.find(r => r.key === role) || ROLES[1];
+
   return (
     <div className="container" style={{ padding: '3.5rem 1.5rem 5rem', display: 'flex', justifyContent: 'center' }}>
-      <div className="card" style={{ maxWidth: '520px', width: '100%', padding: '2.5rem 2rem', borderTop: '4px solid var(--color-secondary)' }}>
+      <div className="card" style={{ maxWidth: '540px', width: '100%', padding: '2.5rem 2rem', borderTop: `4px solid ${selectedRole.color}` }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'var(--color-bg-alt)', color: 'var(--color-secondary-dark)', marginBottom: '1rem' }}>
             <Sparkles size={26} />
@@ -80,42 +112,37 @@ const Register = () => {
           <label className="form-label" style={{ marginBottom: '0.6rem', display: 'block' }}>
             I want to register as:
           </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <button
-              type="button"
-              onClick={() => setRole('kaarigar')}
-              className="card"
-              style={{
-                padding: '1rem',
-                textAlign: 'center',
-                cursor: 'pointer',
-                borderColor: role === 'kaarigar' ? 'var(--color-primary)' : 'var(--color-border)',
-                background: role === 'kaarigar' ? 'var(--color-bg-alt)' : 'var(--color-surface)',
-                borderWidth: role === 'kaarigar' ? '2px' : '1px'
-              }}
-            >
-              <Palette size={24} color="var(--color-primary)" style={{ margin: '0 auto 0.4rem' }} />
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-primary)' }}>Kaarigar</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Artisan / Exhibitor</div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setRole('visitor')}
-              className="card"
-              style={{
-                padding: '1rem',
-                textAlign: 'center',
-                cursor: 'pointer',
-                borderColor: role === 'visitor' ? 'var(--color-secondary-dark)' : 'var(--color-border)',
-                background: role === 'visitor' ? 'var(--color-bg-alt)' : 'var(--color-surface)',
-                borderWidth: role === 'visitor' ? '2px' : '1px'
-              }}
-            >
-              <Ticket size={24} color="var(--color-secondary-dark)" style={{ margin: '0 auto 0.4rem' }} />
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-secondary-dark)' }}>Visitor</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Attendee / Buyer</div>
-            </button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.65rem' }}>
+            {ROLES.map((r) => {
+              const Icon = r.icon;
+              const isSelected = role === r.key;
+              return (
+                <button
+                  key={r.key}
+                  type="button"
+                  id={`register-role-${r.key}`}
+                  onClick={() => setRole(r.key)}
+                  className="card"
+                  style={{
+                    padding: '0.9rem 0.5rem',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    borderColor: isSelected ? r.color : 'var(--color-border)',
+                    background: isSelected ? r.bg : 'var(--color-surface)',
+                    borderWidth: isSelected ? '2px' : '1px',
+                    transition: 'all 0.18s ease'
+                  }}
+                >
+                  <Icon size={22} color={isSelected ? r.color : 'var(--color-text-muted)'} style={{ margin: '0 auto 0.35rem' }} />
+                  <div style={{ fontWeight: 700, fontSize: '0.88rem', color: isSelected ? r.color : 'var(--color-text)' }}>
+                    {r.label}
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginTop: '2px' }}>
+                    {r.tagline}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -173,13 +200,16 @@ const Register = () => {
 
           <button
             type="submit"
-            className="btn btn-secondary btn-block btn-lg"
+            className="btn btn-primary btn-block btn-lg"
             disabled={loading}
-            style={{ marginTop: '1.25rem' }}
+            style={{ 
+              marginTop: '1.25rem',
+              background: role === 'kaarigar' ? 'var(--color-secondary)' : role === 'admin' ? 'var(--color-primary)' : 'var(--color-success)'
+            }}
           >
             {loading ? 'Creating Account...' : (
               <>
-                <UserPlus size={18} /> Register as {role === 'kaarigar' ? 'Kaarigar' : 'Visitor'}
+                <UserPlus size={18} /> Register as {selectedRole.label}
               </>
             )}
           </button>

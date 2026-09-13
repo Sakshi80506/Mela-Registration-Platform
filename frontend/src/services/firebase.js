@@ -31,12 +31,12 @@ import {
 } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyApiKeyForLocalDevelopment123",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCR99KFaf6cLehmM_1PIPTBYebwT1nTpM8",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "kaarigar-expo.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "kaarigar-expo",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "kaarigar-expo.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1234567890",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1234567890:web:abcdef123456"
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "kaarigar-expo.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "371615538367",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:371615538367:web:a2e22e531ab26c3b5bfa0a"
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];

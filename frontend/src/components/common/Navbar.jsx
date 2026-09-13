@@ -2,7 +2,16 @@ import React, { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { Sparkles, Menu, X, LogIn, UserPlus, LogOut, LayoutDashboard, User } from 'lucide-react';
+import {
+  Sparkles, Menu, X, LogIn, UserPlus, LogOut,
+  LayoutDashboard, User, ShieldCheck, Palette, Ticket
+} from 'lucide-react';
+
+const ROLE_META = {
+  admin: { label: 'Admin', color: 'var(--color-primary)', bg: 'var(--color-bg-alt)', Icon: ShieldCheck },
+  kaarigar: { label: 'Kaarigar', color: 'var(--color-secondary-dark)', bg: '#FFF8E7', Icon: Palette },
+  visitor: { label: 'Visitor', color: 'var(--color-success)', bg: '#E8F5E9', Icon: Ticket },
+};
 
 const Navbar = () => {
   const { currentUser, userProfile, role, logout } = useAuth();
@@ -34,6 +43,9 @@ const Navbar = () => {
   };
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  const roleMeta = role ? ROLE_META[role] : null;
+  const RoleIcon = roleMeta?.Icon;
 
   return (
     <header className="public-navbar">
@@ -76,10 +88,22 @@ const Navbar = () => {
             </ul>
           </nav>
 
-          {/* Nav Actions / User state */}
+          {/* Nav Actions */}
           <div className="nav-actions">
             {currentUser ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                {/* Role badge */}
+                {roleMeta && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: '0.35rem',
+                    background: roleMeta.bg, color: roleMeta.color,
+                    padding: '0.25rem 0.65rem', borderRadius: 'var(--radius-full)',
+                    fontSize: '0.75rem', fontWeight: 700, border: `1px solid ${roleMeta.color}22`
+                  }}>
+                    <RoleIcon size={12} />
+                    {roleMeta.label}
+                  </div>
+                )}
                 <Link to={getDashboardPath()} className="btn btn-outline btn-sm">
                   <LayoutDashboard size={16} />
                   <span className="btn-text">Dashboard</span>
@@ -88,7 +112,12 @@ const Navbar = () => {
                   <User size={16} />
                   <span className="btn-text">{userProfile?.name?.split(' ')[0] || 'Profile'}</span>
                 </Link>
-                <button onClick={handleLogout} className="btn btn-sm" style={{ color: 'var(--color-danger)' }} title="Logout">
+                <button
+                  onClick={handleLogout}
+                  className="btn btn-sm"
+                  style={{ color: 'var(--color-danger)' }}
+                  title="Logout"
+                >
                   <LogOut size={16} />
                   <span className="btn-text">Logout</span>
                 </button>
@@ -106,8 +135,8 @@ const Navbar = () => {
               </div>
             )}
 
-            <button 
-              className="mobile-menu-btn" 
+            <button
+              className="mobile-menu-btn"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle navigation menu"
             >
@@ -117,13 +146,13 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
-      <div 
+      {/* Mobile Drawer Overlay */}
+      <div
         className={`mobile-nav-overlay ${mobileMenuOpen ? 'open' : ''}`}
         onClick={closeMobileMenu}
       />
       <div className={`mobile-nav-drawer ${mobileMenuOpen ? 'open' : ''}`}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
           <div className="brand-logo" style={{ fontSize: '1.2rem' }}>
             <Sparkles size={20} />
             <span>Kaarigar Expo</span>
@@ -132,6 +161,20 @@ const Navbar = () => {
             <X size={24} color="var(--color-primary)" />
           </button>
         </div>
+
+        {/* Role badge in mobile */}
+        {currentUser && roleMeta && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+            background: roleMeta.bg, color: roleMeta.color,
+            padding: '0.3rem 0.8rem', borderRadius: 'var(--radius-full)',
+            fontSize: '0.78rem', fontWeight: 700, marginBottom: '1.25rem',
+            border: `1px solid ${roleMeta.color}33`
+          }}>
+            <RoleIcon size={13} />
+            Logged in as {roleMeta.label} — {userProfile?.name?.split(' ')[0] || 'User'}
+          </div>
+        )}
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem' }}>
           <Link to="/" className="nav-link" onClick={closeMobileMenu}>Home</Link>
@@ -145,7 +188,7 @@ const Navbar = () => {
           {currentUser ? (
             <>
               <Link to={getDashboardPath()} className="btn btn-primary btn-block" onClick={closeMobileMenu}>
-                <LayoutDashboard size={18} /> Dashboard
+                <LayoutDashboard size={18} /> My Dashboard
               </Link>
               <button onClick={handleLogout} className="btn btn-outline btn-block" style={{ color: 'var(--color-danger)' }}>
                 <LogOut size={18} /> Logout

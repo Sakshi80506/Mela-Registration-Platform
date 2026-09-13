@@ -145,9 +145,10 @@ const Home = () => {
             <div style={{ position: 'relative' }}>
               <div style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', boxShadow: 'var(--shadow-xl)', border: '3px solid rgba(215, 168, 89, 0.4)' }}>
                 <img 
-                  src="https://images.unsplash.com/photo-1599818817290-7f2bf8f23f6d?auto=format&fit=crop&w=800&q=80" 
+                  src="/src/assets/hero.jpg"
                   alt="Indian handicraft exhibition showcase" 
                   style={{ width: '100%', height: '360px', objectFit: 'cover' }}
+                  onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1599818817290-7f2bf8f23f6d?auto=format&fit=crop&w=800&q=80"; }}
                 />
               </div>
             </div>
