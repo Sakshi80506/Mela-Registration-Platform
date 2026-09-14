@@ -32,6 +32,7 @@ import MyRegistrations from './pages/visitor/MyRegistrations';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import CreateMela from './pages/admin/CreateMela';
 import ManageMelas from './pages/admin/ManageMelas';
+import ManageKaarigars from './pages/admin/ManageKaarigars';
 import ManageApplications from './pages/admin/ManageApplications';
 import ManageVisitors from './pages/admin/ManageVisitors';
 import AdminProfile from './pages/admin/AdminProfile';
@@ -97,10 +98,12 @@ function App() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="create-mela" element={<CreateMela />} />
               <Route path="melas" element={<ManageMelas />} />
+              <Route path="kaarigars" element={<ManageKaarigars />} />
               <Route path="applications" element={<ManageApplications />} />
               <Route path="visitors" element={<ManageVisitors />} />
               <Route path="profile" element={<AdminProfile />} />
             </Route>
+
 
             {/* 404 CATCH ALL */}
             <Route path="*" element={<Navigate to="/" replace />} />

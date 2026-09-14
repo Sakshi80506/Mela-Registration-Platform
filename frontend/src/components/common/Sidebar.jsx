@@ -39,11 +39,13 @@ const Sidebar = ({ isOpen, onClose }) => {
         { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
         { label: 'Create Mela', path: '/admin/create-mela', icon: PlusCircle },
         { label: 'Manage Melas', path: '/admin/melas', icon: Calendar },
+        { label: 'Manage Kaarigars', path: '/admin/kaarigars', icon: Users },
         { label: 'Applications', path: '/admin/applications', icon: FileText },
-        { label: 'Visitors', path: '/admin/visitors', icon: Users },
+        { label: 'Visitors', path: '/admin/visitors', icon: Ticket },
         { label: 'Admin Profile', path: '/admin/profile', icon: User },
       ];
     } else if (role === 'kaarigar') {
+
       return [
         { label: 'Dashboard', path: '/kaarigar/dashboard', icon: LayoutDashboard },
         { label: 'My Profile', path: '/kaarigar/profile', icon: User },

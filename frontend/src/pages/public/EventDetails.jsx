@@ -8,20 +8,25 @@ import {
   ArrowLeft, 
   Sparkles, 
   Share2, 
-  CheckCircle2 
+  CheckCircle2,
+  Navigation,
+  ExternalLink
 } from 'lucide-react';
 import { eventService } from '../../services/eventService';
 import { visitorService } from '../../services/visitorService';
+import { calculateEventStatus, formatEventDates, getEventMapUrl, getEventMapEmbedUrl } from '../../utils/eventUtils';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
 import StatusBadge from '../../components/common/StatusBadge';
 import KaarigarCard from '../../components/cards/KaarigarCard';
+import EventReviews from '../../components/events/EventReviews';
 import Modal from '../../components/common/Modal';
 import FormInput from '../../components/common/FormInput';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
 const defaultEventImage = 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1200&q=80';
+
 
 const EventDetails = () => {
   const { eventId } = useParams();
@@ -223,9 +228,9 @@ const EventDetails = () => {
               <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
                 <MapPin size={20} />
               </div>
-              <div>
-                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Venue</span>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{event.location}</div>
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Venue Location</span>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{event.location}, {event.city}, {event.state}</div>
               </div>
             </div>
 
@@ -237,6 +242,46 @@ const EventDetails = () => {
                 <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Artisans & Visitors</span>
                 <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{event.approvedArtisansCount} Kaarigars • {event.registeredVisitorsCount} RSVPs</div>
               </div>
+            </div>
+          </div>
+
+          {/* Map Location & Directions Section */}
+          <div style={{ marginTop: '2rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
+            <div style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--color-border-light)' }}>
+              <div>
+                <h3 style={{ fontSize: '1.2rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                  <Navigation size={18} color="var(--color-secondary-dark)" /> Venue Location & Directions
+                </h3>
+                <p style={{ fontSize: '0.88rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                  {event.location}, {event.city}, {event.state}
+                </p>
+              </div>
+              <a
+                href={getEventMapUrl(event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <MapPin size={14} /> Open in Google Maps <ExternalLink size={13} />
+              </a>
+            </div>
+
+            {/* Embedded Google Maps View */}
+            <div style={{ width: '100%', height: '280px', background: '#E2E8F0', position: 'relative' }}>
+              <iframe
+                title={`Map of ${event.name} venue`}
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                scrolling="no"
+                marginHeight="0"
+                marginWidth="0"
+                src={getEventMapEmbedUrl(event)}
+                style={{ border: 0 }}
+                loading="lazy"
+                allowFullScreen
+              />
             </div>
           </div>
         </div>
@@ -288,11 +333,21 @@ const EventDetails = () => {
                 to="/kaarigar/apply" 
                 state={{ selectedEventId: event.id }}
                 className="btn btn-outline btn-block"
-                style={{ marginBottom: '1rem' }}
+                style={{ marginBottom: '0.75rem' }}
               >
                 <Sparkles size={16} /> Apply as Kaarigar
               </Link>
             )}
+
+            <a 
+              href={getEventMapUrl(event)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline btn-block btn-sm"
+              style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+            >
+              <Navigation size={14} /> Get Map Directions <ExternalLink size={12} />
+            </a>
 
             <button 
               onClick={handleShare}
@@ -329,12 +384,16 @@ const EventDetails = () => {
         )}
       </section>
 
+      {/* FEEDBACK & RATINGS SECTION */}
+      <EventReviews eventId={event.id} eventName={event.name} />
+
       {/* RSVP Modal */}
       <Modal
         isOpen={rsvpModalOpen}
         onClose={() => setRsvpModalOpen(false)}
         title={`Register for ${event.name}`}
       >
+
         <form onSubmit={handleRsvpSubmit}>
           <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1.25rem' }}>
             Enter your contact details to reserve your visitor entry pass.

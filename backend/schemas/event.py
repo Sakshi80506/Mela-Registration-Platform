@@ -12,6 +12,7 @@ class EventBase(BaseModel):
     location: str = Field(..., min_length=3)
     city: str = Field(..., min_length=2)
     state: str = Field(..., min_length=2)
+    mapUrl: Optional[str] = None
     description: str = Field(..., min_length=10)
     image: Optional[str] = None
     maxArtisans: int = Field(default=50, ge=1)
@@ -31,6 +32,7 @@ class EventUpdate(BaseModel):
     location: Optional[str] = None
     city: Optional[str] = None
     state: Optional[str] = None
+    mapUrl: Optional[str] = None
     description: Optional[str] = None
     image: Optional[str] = None
     maxArtisans: Optional[int] = None

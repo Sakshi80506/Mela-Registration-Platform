@@ -118,46 +118,55 @@ export const eventService = {
         status: computedStatus
       };
 
-      // Fetch approved artisans for this event
-      const appQ = query(
-        collection(db, APPLICATIONS_COLLECTION),
-        where('eventId', '==', eventId),
-        where('status', '==', 'approved')
-      );
-      const appSnap = await getDocs(appQ);
-      
+      // Fetch approved artisans for this event (safely)
       const approvedArtisans = [];
-      for (const appDoc of appSnap.docs) {
-        const appData = appDoc.data();
-        if (appData.kaarigarId) {
-          try {
-            const kRef = doc(db, 'kaarigars', appData.kaarigarId);
-            const kSnap = await getDoc(kRef);
-            if (kSnap.exists()) {
-              approvedArtisans.push({
-                applicationId: appDoc.id,
-                ...kSnap.data(),
-                id: kSnap.id,
-                craftDescription: appData.description || kSnap.data().description,
-                craftImage: appData.craftImage || kSnap.data().craftPhoto
-              });
+      try {
+        const appQ = query(
+          collection(db, APPLICATIONS_COLLECTION),
+          where('eventId', '==', eventId),
+          where('status', '==', 'approved')
+        );
+        const appSnap = await getDocs(appQ);
+        
+        for (const appDoc of appSnap.docs) {
+          const appData = appDoc.data();
+          if (appData.kaarigarId) {
+            try {
+              const kRef = doc(db, 'kaarigars', appData.kaarigarId);
+              const kSnap = await getDoc(kRef);
+              if (kSnap.exists()) {
+                approvedArtisans.push({
+                  applicationId: appDoc.id,
+                  ...kSnap.data(),
+                  id: kSnap.id,
+                  craftDescription: appData.description || kSnap.data().description,
+                  craftImage: appData.craftImage || kSnap.data().craftPhoto
+                });
+              }
+            } catch (e) {
+              console.warn('Could not fetch artisan profile', e);
             }
-          } catch (e) {
-            console.warn('Could not fetch artisan profile', e);
           }
         }
+      } catch (err) {
+        console.warn('Could not fetch approved artisans for event:', err);
       }
 
       eventData.approvedArtisans = approvedArtisans;
-      eventData.approvedArtisansCount = approvedArtisans.length;
+      eventData.approvedArtisansCount = approvedArtisans.length || eventData.approvedArtisansCount || 0;
 
-      // Fetch visitors count
-      const visQ = query(
-        collection(db, VISITORS_COLLECTION),
-        where('eventId', '==', eventId)
-      );
-      const visSnap = await getDocs(visQ);
-      eventData.registeredVisitorsCount = visSnap.size;
+      // Fetch visitors count (safely)
+      try {
+        const visQ = query(
+          collection(db, VISITORS_COLLECTION),
+          where('eventId', '==', eventId)
+        );
+        const visSnap = await getDocs(visQ);
+        eventData.registeredVisitorsCount = visSnap.size;
+      } catch (err) {
+        console.warn('Could not fetch visitors count for event:', err);
+        eventData.registeredVisitorsCount = eventData.registeredVisitorsCount || 0;
+      }
 
       return eventData;
     } catch (error) {

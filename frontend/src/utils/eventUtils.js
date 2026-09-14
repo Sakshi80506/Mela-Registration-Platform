@@ -119,3 +119,30 @@ export const formatEventDates = (event) => {
     return startDate;
   }
 };
+
+/**
+ * Generates direct Google Maps URL for navigation & directions.
+ * Uses event.mapUrl if explicitly provided, or auto-generates from location, city, state.
+ */
+export const getEventMapUrl = (event) => {
+  if (!event) return 'https://www.google.com/maps';
+  if (event.mapUrl && typeof event.mapUrl === 'string' && event.mapUrl.trim().startsWith('http')) {
+    return event.mapUrl.trim();
+  }
+
+  const queryParts = [event.location, event.city, event.state, 'India'].filter(Boolean);
+  const queryStr = queryParts.join(', ') || event.city || event.name || 'India';
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryStr)}`;
+};
+
+/**
+ * Generates an iframe-embeddable OpenStreetMap / Google Maps URL for interactive map preview.
+ */
+export const getEventMapEmbedUrl = (event) => {
+  if (!event) return '';
+  const queryParts = [event.location, event.city, event.state].filter(Boolean);
+  const queryStr = queryParts.join(', ') || event.city || event.name || '';
+  if (!queryStr) return '';
+  return `https://maps.google.com/maps?q=${encodeURIComponent(queryStr)}&t=&z=14&ie=UTF8&iwloc=&output=embed`;
+};
+

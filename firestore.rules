@@ -52,7 +52,7 @@ service cloud.firestore {
 
     // Kaarigar Applications
     match /kaarigarApplications/{applicationId} {
-      allow read: if isAuthenticated();
+      allow read: if true; // Publicly viewable for approved artisan showcases on events
       allow create: if isAuthenticated();
       allow update, write: if isAuthenticated() && (
         resource.data.kaarigarId == request.auth.uid || 
@@ -67,9 +67,20 @@ service cloud.firestore {
 
     // Visitor Registrations (RSVPs)
     match /visitorRegistrations/{registrationId} {
-      allow read: if isAuthenticated() && (resource.data.visitorId == request.auth.uid || isAdmin());
+      allow read: if true; // Allows event visitor counts and individual pass validation
       allow create: if true; // Allows registered or guest visitors
       allow update, write, delete: if isAuthenticated() && (resource.data.visitorId == request.auth.uid || isAdmin());
     }
+
+    // Event Reviews & Feedback Collection
+    match /eventReviews/{reviewId} {
+      allow read: if true; // Publicly viewable for event reviews and ratings
+      allow create: if isAuthenticated(); // Logged-in Kaarigars and Visitors can review
+      allow update, delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+    }
   }
 }
+

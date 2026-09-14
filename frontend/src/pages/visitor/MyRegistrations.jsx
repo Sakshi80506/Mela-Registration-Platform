@@ -1,18 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Ticket, 
-  Calendar, 
-  MapPin, 
-  CheckCircle2, 
-  Trash2, 
-  Compass, 
-  Sparkles,
-  QrCode
-} from 'lucide-react';
+import { Ticket, Calendar, MapPin, Trash2, Compass, CheckCircle2, QrCode, Sparkles, Navigation, ExternalLink } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { visitorService } from '../../services/visitorService';
+import { getEventMapUrl, formatEventDates } from '../../utils/eventUtils';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import EmptyState from '../../components/common/EmptyState';
 import Modal from '../../components/common/Modal';
@@ -121,11 +113,22 @@ const MyRegistrations = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Calendar size={15} color="var(--color-secondary-dark)" />
-                  <span>{reg.event?.date || 'Date TBA'}</span>
+                  <span>{formatEventDates(reg.event)}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <MapPin size={15} color="var(--color-secondary-dark)" />
-                  <span>{reg.event?.location || 'Venue TBA'}, {reg.event?.city || ''}</span>
+                  <a
+                    href={getEventMapUrl(reg.event)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="Open venue in Google Maps"
+                    style={{ color: 'inherit', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = 'inherit'; }}
+                  >
+                    <span>{reg.event?.location || 'Venue TBA'}, {reg.event?.city || ''}</span>
+                    <ExternalLink size={11} style={{ opacity: 0.6 }} />
+                  </a>
                 </div>
               </div>
 
@@ -137,27 +140,54 @@ const MyRegistrations = () => {
                 </div>
               </div>
 
-              <div style={{ marginTop: 'auto', display: 'flex', gap: '0.6rem' }}>
-                <button
-                  onClick={() => setSelectedPass(reg)}
-                  className="btn btn-primary btn-sm btn-block"
-                >
-                  <Ticket size={15} /> Show Pass
-                </button>
-                <button
-                  onClick={() => handleCancelRegistration(reg.id)}
-                  disabled={cancellingId === reg.id}
-                  className="btn btn-outline btn-sm"
-                  style={{ color: 'var(--color-danger)', borderColor: '#FFCDD2' }}
-                  title="Cancel Pass"
-                >
-                  <Trash2 size={15} />
-                </button>
+              <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {reg.eventId && (
+                    <Link
+                      to={`/melas/${reg.eventId}`}
+                      className="btn btn-outline btn-sm"
+                      style={{ flex: 1, textAlign: 'center' }}
+                    >
+                      View Details
+                    </Link>
+                  )}
+                  <a
+                    href={getEventMapUrl(reg.event)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-outline btn-sm"
+                    style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}
+                    title="Open location on Google Maps"
+                  >
+                    <MapPin size={13} color="var(--color-secondary-dark)" />
+                    <span>View Location</span>
+                  </a>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => setSelectedPass(reg)}
+                    className="btn btn-primary btn-sm"
+                    style={{ flex: 1 }}
+                  >
+                    <Ticket size={15} /> Show Pass
+                  </button>
+                  <button
+                    onClick={() => handleCancelRegistration(reg.id)}
+                    disabled={cancellingId === reg.id}
+                    className="btn btn-outline btn-sm"
+                    style={{ color: 'var(--color-danger)', borderColor: '#FFCDD2', padding: '0.35rem 0.6rem' }}
+                    title="Cancel Pass"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
+
 
       {/* Digital Pass / Ticket Modal */}
       <Modal
@@ -175,13 +205,23 @@ const MyRegistrations = () => {
               <h3 style={{ color: '#FFFFFF', fontSize: '1.4rem', marginBottom: '0.5rem' }}>
                 {selectedPass.event?.name}
               </h3>
-              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem' }}>
+              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
                 {selectedPass.event?.location}, {selectedPass.event?.city}
               </p>
+              
+              <a
+                href={getEventMapUrl(selectedPass.event)}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--color-secondary)', fontSize: '0.82rem', fontWeight: 600, background: 'rgba(255,255,255,0.1)', padding: '0.3rem 0.75rem', borderRadius: 'var(--radius-full)', textDecoration: 'none' }}
+              >
+                <Navigation size={13} /> Get Venue Directions <ExternalLink size={11} />
+              </a>
+
               <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed rgba(255,255,255,0.2)', display: 'flex', justifyContent: 'space-around', fontSize: '0.85rem' }}>
                 <div>
                   <div style={{ opacity: 0.7, fontSize: '0.75rem' }}>DATE</div>
-                  <div style={{ fontWeight: 700 }}>{selectedPass.event?.date}</div>
+                  <div style={{ fontWeight: 700 }}>{formatEventDates(selectedPass.event)}</div>
                 </div>
                 <div>
                   <div style={{ opacity: 0.7, fontSize: '0.75rem' }}>ATTENDEES</div>

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { PlusCircle, Calendar, MapPin, Upload, Sparkles, ArrowLeft, Info, CheckCircle2, Clock } from 'lucide-react';
+import { PlusCircle, Calendar, MapPin, Upload, Sparkles, ArrowLeft, Info, CheckCircle2, Clock, ExternalLink, Navigation } from 'lucide-react';
 import { eventService } from '../../services/eventService';
-import { calculateEventStatus, getEventStatusInfo } from '../../utils/eventUtils';
+import { calculateEventStatus, getEventStatusInfo, getEventMapUrl } from '../../utils/eventUtils';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import FormInput from '../../components/common/FormInput';
@@ -27,6 +27,7 @@ const CreateMela = () => {
   const [location, setLocation] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
+  const [mapUrl, setMapUrl] = useState('');
   const [description, setDescription] = useState('');
   const [image, setImage] = useState(defaultImages[0]);
   const [maxArtisans, setMaxArtisans] = useState(50);
@@ -53,6 +54,11 @@ const CreateMela = () => {
     return getEventStatusInfo(autoDetectedStatus);
   }, [autoDetectedStatus]);
 
+  // Live map URL preview for verification
+  const liveMapPreviewUrl = useMemo(() => {
+    return getEventMapUrl({ location, city, state, mapUrl });
+  }, [location, city, state, mapUrl]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -78,6 +84,7 @@ const CreateMela = () => {
         location,
         city,
         state,
+        mapUrl: mapUrl ? mapUrl.trim() : '',
         description,
         image,
         maxArtisans: Number(maxArtisans) || 50,
@@ -218,6 +225,41 @@ const CreateMela = () => {
             value={state}
             onChange={(e) => setState(e.target.value)}
             placeholder="e.g. Delhi"
+          />
+        </div>
+
+        {/* Map Location Link & Live Test */}
+        <div style={{ background: 'var(--color-bg-alt)', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.75rem' }}>
+            <div>
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Navigation size={14} color="var(--color-secondary-dark)" /> Interactive Map Coordinates / Destination
+              </span>
+              <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                {location || city ? `Destination set: ${location ? location + ', ' : ''}${city} ${state}` : 'Enter venue location above to enable 1-click Google Maps navigation.'}
+              </p>
+            </div>
+
+            {(location || city) && (
+              <a
+                href={liveMapPreviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-outline btn-sm"
+                style={{ fontSize: '0.8rem', padding: '0.3rem 0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <MapPin size={13} /> Test Location on Google Maps <ExternalLink size={12} />
+              </a>
+            )}
+          </div>
+
+          <FormInput
+            id="event-map-url"
+            label="Custom Google Maps URL or Plus Code (Optional)"
+            value={mapUrl}
+            onChange={(e) => setMapUrl(e.target.value)}
+            placeholder="e.g. https://maps.app.goo.gl/... or leave empty to auto-generate"
+            helpText="Leave empty to automatically generate accurate Google Maps navigation using the venue address."
           />
         </div>
 

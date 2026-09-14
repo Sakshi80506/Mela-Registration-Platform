@@ -82,11 +82,15 @@ const AdminDashboard = () => {
           <Link to="/admin/create-mela" className="btn btn-secondary">
             <PlusCircle size={16} /> Create New Mela
           </Link>
+          <Link to="/admin/kaarigars" className="btn btn-outline">
+            <Users size={16} /> Manage Kaarigars ({stats.totalKaarigars})
+          </Link>
           <Link to="/admin/applications" className="btn btn-outline">
             <FileText size={16} /> Review Applications ({stats.pendingApplications})
           </Link>
         </div>
       </div>
+
 
       {/* KPI Metrics Grid */}
       <div className="metric-grid">

@@ -12,10 +12,11 @@ import {
   CheckCircle2,
   AlertTriangle,
   Sparkles,
-  Clock
+  Clock,
+  Navigation
 } from 'lucide-react';
 import { eventService } from '../../services/eventService';
-import { calculateEventStatus, formatEventDates, getEventStatusInfo } from '../../utils/eventUtils';
+import { calculateEventStatus, formatEventDates, getEventStatusInfo, getEventMapUrl } from '../../utils/eventUtils';
 import { useToast } from '../../context/ToastContext';
 import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -69,6 +70,7 @@ const ManageMelas = () => {
       location: event.location,
       city: event.city,
       state: event.state,
+      mapUrl: event.mapUrl || '',
       description: event.description,
       maxArtisans: event.maxArtisans || 50,
       maxVisitors: event.maxVisitors || 2000,
@@ -232,7 +234,19 @@ const ManageMelas = () => {
                   </td>
                   <td>
                     <div>{ev.city}, {ev.state}</div>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{ev.location}</div>
+                    <a
+                      href={getEventMapUrl(ev)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open venue in Google Maps"
+                      style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-primary)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-text-muted)'; }}
+                    >
+                      <MapPin size={11} color="var(--color-secondary-dark)" />
+                      <span>{ev.location}</span>
+                      <ExternalLink size={10} style={{ opacity: 0.6 }} />
+                    </a>
                   </td>
                   <td>
                     <strong>{ev.approvedArtisansCount || 0}</strong>
@@ -389,6 +403,32 @@ const ManageMelas = () => {
               value={editFormData.location}
               onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
             />
+
+            {/* Map Preview & Custom URL */}
+            <div style={{ background: 'var(--color-bg-alt)', padding: '1rem 1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.6rem' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Navigation size={13} color="var(--color-secondary-dark)" /> Map Navigation
+                </span>
+                <a
+                  href={getEventMapUrl(editFormData)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline btn-sm"
+                  style={{ fontSize: '0.78rem', padding: '0.25rem 0.6rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                >
+                  <MapPin size={12} /> Test Location on Maps <ExternalLink size={11} />
+                </a>
+              </div>
+              <FormInput
+                id="edit-map-url"
+                label="Custom Map URL or Plus Code (Optional)"
+                value={editFormData.mapUrl || ''}
+                onChange={(e) => setEditFormData({ ...editFormData, mapUrl: e.target.value })}
+                placeholder="https://maps.app.goo.gl/... or leave empty to auto-detect"
+                helpText="Auto-generates Google Maps directions using venue address if left empty."
+              />
+            </div>
 
             <FormInput
               id="edit-desc"

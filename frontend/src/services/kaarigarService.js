@@ -181,5 +181,18 @@ export const kaarigarService = {
       console.error('Error saving kaarigar profile:', error);
       throw error;
     }
+  },
+
+  // Delete kaarigar profile (Admin or account owner)
+  async deleteKaarigar(kaarigarId) {
+    try {
+      const docRef = doc(db, KAARIGARS_COLLECTION, kaarigarId);
+      await deleteDoc(docRef);
+      return true;
+    } catch (error) {
+      console.error('Error deleting kaarigar profile:', error);
+      throw error;
+    }
   }
 };
+
