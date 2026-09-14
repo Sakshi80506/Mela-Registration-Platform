@@ -5,6 +5,8 @@ from datetime import datetime
 class EventBase(BaseModel):
     name: str = Field(..., min_length=3, max_length=150)
     date: str = Field(..., description="YYYY-MM-DD format")
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
     startTime: str = Field(..., description="HH:MM format")
     endTime: str = Field(..., description="HH:MM format")
     location: str = Field(..., min_length=3)
@@ -14,7 +16,7 @@ class EventBase(BaseModel):
     image: Optional[str] = None
     maxArtisans: int = Field(default=50, ge=1)
     maxVisitors: Optional[int] = Field(default=1000, ge=1)
-    status: Literal["upcoming", "ongoing", "completed", "cancelled"] = "upcoming"
+    status: Literal["upcoming", "ongoing", "closed", "completed", "cancelled"] = "upcoming"
 
 class EventCreate(EventBase):
     pass
@@ -22,6 +24,8 @@ class EventCreate(EventBase):
 class EventUpdate(BaseModel):
     name: Optional[str] = None
     date: Optional[str] = None
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
     startTime: Optional[str] = None
     endTime: Optional[str] = None
     location: Optional[str] = None
@@ -31,7 +35,7 @@ class EventUpdate(BaseModel):
     image: Optional[str] = None
     maxArtisans: Optional[int] = None
     maxVisitors: Optional[int] = None
-    status: Optional[Literal["upcoming", "ongoing", "completed", "cancelled"]] = None
+    status: Optional[Literal["upcoming", "ongoing", "closed", "completed", "cancelled"]] = None
 
 class EventResponse(EventBase):
     id: str

@@ -8,6 +8,37 @@ from backend.firebase_admin_setup import get_db
 
 router = APIRouter(prefix="/events", tags=["Events"])
 
+def compute_event_status(data: dict) -> str:
+    start_date = data.get("startDate") or data.get("date")
+    end_date = data.get("endDate") or data.get("date") or start_date
+    if not start_date:
+        return data.get("status", "upcoming")
+    
+    start_time = data.get("startTime", "00:00")
+    end_time = data.get("endTime", "23:59")
+    
+    try:
+        start_str = f"{start_date.split('T')[0]} {start_time}"
+        end_str = f"{end_date.split('T')[0]} {end_time}"
+        
+        start_dt = datetime.strptime(start_str, "%Y-%m-%d %H:%M")
+        end_dt = datetime.strptime(end_str, "%Y-%m-%d %H:%M")
+        now = datetime.now()
+        
+        if now < start_dt:
+            return "upcoming"
+        elif start_dt <= now <= end_dt:
+            return "ongoing"
+        else:
+            return "closed"
+    except Exception:
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        if today_str < start_date:
+            return "upcoming"
+        elif today_str > end_date:
+            return "closed"
+        return "ongoing"
+
 @router.get("", response_model=List[EventResponse])
 def get_events(
     status_filter: Optional[str] = Query(None, alias="status"),
@@ -21,8 +52,6 @@ def get_events(
     try:
         events_ref = db.collection("events")
         query = events_ref
-        if status_filter:
-            query = query.where("status", "==", status_filter)
         if city:
             query = query.where("city", "==", city)
             
@@ -31,6 +60,10 @@ def get_events(
         for doc in docs:
             data = doc.to_dict()
             data["id"] = doc.id
+            data["status"] = compute_event_status(data)
+            
+            if status_filter and data["status"] != status_filter:
+                continue
             
             # Count approved artisans
             app_count = db.collection("kaarigarApplications")\
@@ -62,6 +95,7 @@ def get_event(event_id: str):
     
     data = doc.to_dict()
     data["id"] = doc.id
+    data["status"] = compute_event_status(data)
     
     app_count = db.collection("kaarigarApplications")\
         .where("eventId", "==", event_id)\

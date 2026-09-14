@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { PlusCircle, Calendar, MapPin, Upload, Sparkles, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Calendar, MapPin, Upload, Sparkles, ArrowLeft, Info, CheckCircle2, Clock } from 'lucide-react';
 import { eventService } from '../../services/eventService';
+import { calculateEventStatus, getEventStatusInfo } from '../../utils/eventUtils';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import FormInput from '../../components/common/FormInput';
+import StatusBadge from '../../components/common/StatusBadge';
 
 const defaultImages = [
   'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=1200&q=80',
@@ -18,7 +20,8 @@ const CreateMela = () => {
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
-  const [date, setDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('20:00');
   const [location, setLocation] = useState('');
@@ -28,18 +31,38 @@ const CreateMela = () => {
   const [image, setImage] = useState(defaultImages[0]);
   const [maxArtisans, setMaxArtisans] = useState(50);
   const [maxVisitors, setMaxVisitors] = useState(2000);
-  const [status, setStatus] = useState('upcoming');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     document.title = "Create Mela | Kaarigar Expo";
   }, []);
 
+  // Compute live auto-detected status as dates/times change
+  const autoDetectedStatus = useMemo(() => {
+    if (!startDate) return 'upcoming';
+    return calculateEventStatus({
+      startDate,
+      date: startDate,
+      endDate: endDate || startDate,
+      startTime,
+      endTime
+    });
+  }, [startDate, endDate, startTime, endTime]);
+
+  const statusInfo = useMemo(() => {
+    return getEventStatusInfo(autoDetectedStatus);
+  }, [autoDetectedStatus]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!name || !date || !startTime || !endTime || !location || !city || !state || !description) {
+    if (!name || !startDate || !startTime || !endTime || !location || !city || !state || !description) {
       showError('Please fill in all mandatory event fields.');
+      return;
+    }
+
+    if (endDate && endDate < startDate) {
+      showError('End date cannot be earlier than start date.');
       return;
     }
 
@@ -47,7 +70,9 @@ const CreateMela = () => {
     try {
       await eventService.createEvent({
         name,
-        date,
+        date: startDate,
+        startDate,
+        endDate: endDate || startDate,
         startTime,
         endTime,
         location,
@@ -57,10 +82,10 @@ const CreateMela = () => {
         image,
         maxArtisans: Number(maxArtisans) || 50,
         maxVisitors: Number(maxVisitors) || 2000,
-        status
+        status: autoDetectedStatus
       }, currentUser?.uid);
 
-      showSuccess(`Mela "${name}" created successfully!`);
+      showSuccess(`Mela "${name}" scheduled as ${autoDetectedStatus.toUpperCase()}!`);
       navigate('/admin/melas');
     } catch (err) {
       console.error('Error creating mela:', err);
@@ -98,19 +123,36 @@ const CreateMela = () => {
           placeholder="e.g. National Terracotta & Handloom Heritage Expo 2026"
         />
 
-        <div className="form-grid-3">
+        <div className="form-grid-2">
           <FormInput
-            id="event-date"
+            id="event-start-date"
             type="date"
-            label="Event Date"
+            label="Start Date"
             required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
+            value={startDate}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+              if (!endDate || endDate < e.target.value) {
+                setEndDate(e.target.value);
+              }
+            }}
           />
+          <FormInput
+            id="event-end-date"
+            type="date"
+            label="End Date (Optional / Multi-day)"
+            value={endDate}
+            min={startDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            helpText="Defaults to start date for single-day exhibitions"
+          />
+        </div>
+
+        <div className="form-grid-2">
           <FormInput
             id="event-start-time"
             type="time"
-            label="Start Time"
+            label="Opening / Start Time"
             required
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
@@ -118,11 +160,37 @@ const CreateMela = () => {
           <FormInput
             id="event-end-time"
             type="time"
-            label="End Time"
+            label="Closing / End Time"
             required
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
           />
+        </div>
+
+        {/* Live Auto-Detection Card */}
+        <div style={{
+          background: 'var(--color-bg-alt)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '1.25rem 1.5rem',
+          marginBottom: '1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem'
+        }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              <Sparkles size={14} color="var(--color-secondary-dark)" /> Auto-Calculated Exhibition Status
+            </div>
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '0.2rem', marginBottom: 0 }}>
+              {startDate ? statusInfo.description : 'Select a start date to see automatically calculated timeline status.'}
+            </p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <StatusBadge status={autoDetectedStatus} />
+          </div>
         </div>
 
         <FormInput
@@ -164,7 +232,7 @@ const CreateMela = () => {
           placeholder="Describe the themes, craft demonstrations, master workshops, cultural performances..."
         />
 
-        <div className="form-grid-3">
+        <div className="form-grid-2">
           <FormInput
             id="event-max-artisans"
             type="number"
@@ -183,19 +251,6 @@ const CreateMela = () => {
             label="Max Visitor Capacity"
             value={maxVisitors}
             onChange={(e) => setMaxVisitors(e.target.value)}
-          />
-          <FormInput
-            id="event-status"
-            type="select"
-            label="Initial Status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            options={[
-              { label: 'Upcoming', value: 'upcoming' },
-              { label: 'Ongoing', value: 'ongoing' },
-              { label: 'Completed', value: 'completed' },
-              { label: 'Cancelled', value: 'cancelled' }
-            ]}
           />
         </div>
 

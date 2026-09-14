@@ -18,6 +18,7 @@ import { eventService } from '../../services/eventService';
 import DashboardCard from '../../components/cards/DashboardCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import { formatEventDates } from '../../utils/eventUtils';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -95,7 +96,11 @@ const AdminDashboard = () => {
           icon={Calendar}
           color="var(--color-primary)"
           bgColor="var(--color-bg-alt)"
-          subtitle={`${stats.upcomingMelas} Upcoming`}
+          subtitle={
+            stats.ongoingMelas > 0 
+              ? `${stats.ongoingMelas} Live • ${stats.upcomingMelas} Upcoming` 
+              : `${stats.upcomingMelas} Upcoming`
+          }
         />
         <DashboardCard
           title="Total Kaarigars"
@@ -239,7 +244,7 @@ const AdminDashboard = () => {
                 {recentEvents.map((ev) => (
                   <tr key={ev.id}>
                     <td><strong>{ev.name}</strong></td>
-                    <td>{ev.date} ({ev.startTime || '10:00'} - {ev.endTime || '20:00'})</td>
+                    <td>{formatEventDates(ev)} ({ev.startTime || '10:00'} - {ev.endTime || '20:00'})</td>
                     <td>{ev.city}, {ev.state}</td>
                     <td><strong>{ev.approvedArtisansCount || 0}</strong> / {ev.maxArtisans || '∞'}</td>
                     <td><strong>{ev.registeredVisitorsCount || 0}</strong></td>

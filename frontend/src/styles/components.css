@@ -275,10 +275,50 @@
   border: 1px solid #FFE082;
 }
 
-.status-badge.approved, .status-badge.upcoming, .status-badge.active {
+.status-badge.approved, .status-badge.active {
   background: var(--color-success-bg);
   color: var(--color-success);
   border: 1px solid #C8E6C9;
+}
+
+.status-badge.upcoming {
+  background: #EFF6FF;
+  color: #1E40AF;
+  border: 1px solid #BFDBFE;
+}
+
+.status-badge.ongoing {
+  background: #ECFDF5;
+  color: #065F46;
+  border: 1px solid #A7F3D0;
+  position: relative;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
+}
+
+.status-badge.ongoing::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #10B981;
+  margin-right: 0.15rem;
+  animation: pulseLive 1.8s infinite;
+}
+
+@keyframes pulseLive {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 .status-badge.rejected, .status-badge.cancelled {
@@ -287,10 +327,10 @@
   border: 1px solid #FFCDD2;
 }
 
-.status-badge.completed {
-  background: #ECEFF1;
-  color: #455A64;
-  border: 1px solid #CFD8DC;
+.status-badge.closed, .status-badge.completed {
+  background: #F1F5F9;
+  color: #64748B;
+  border: 1px solid #CBD5E1;
 }
 
 /* Metric / Dashboard Cards */

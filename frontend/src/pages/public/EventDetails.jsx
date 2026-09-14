@@ -134,12 +134,8 @@ const EventDetails = () => {
     );
   }
 
-  const formattedDate = event.date ? new Date(event.date).toLocaleDateString('en-IN', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  }) : 'Date TBA';
+  const formattedDates = formatEventDates(event);
+  const currentStatus = calculateEventStatus(event);
 
   return (
     <div className="container" style={{ padding: '2.5rem 1.5rem 5rem' }}>
@@ -162,7 +158,7 @@ const EventDetails = () => {
         
         <div style={{ position: 'absolute', bottom: '2rem', left: '2rem', right: '2rem', color: '#FFFFFF' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-            <StatusBadge status={event.status} />
+            <StatusBadge status={currentStatus} />
             <span style={{ fontSize: '0.85rem', background: 'rgba(255,255,255,0.2)', padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-sm)', backdropFilter: 'blur(4px)' }}>
               {event.city}, {event.state}
             </span>
@@ -175,6 +171,28 @@ const EventDetails = () => {
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2.5rem', marginBottom: '4rem' }}>
         {/* Left Column: Description & Key Info */}
         <div>
+          {/* Live Status Notification Box */}
+          {currentStatus === 'ongoing' && (
+            <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10B981', flexShrink: 0 }} />
+              <div>
+                <strong style={{ color: '#065F46' }}>Exhibition is currently LIVE & Ongoing!</strong>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: '#047857' }}>
+                  Gates are open today between {event.startTime || '10:00 AM'} and {event.endTime || '08:00 PM'}. Visitors can walk in and meet master artisans.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {currentStatus === 'closed' && (
+            <div style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', marginBottom: '1.5rem' }}>
+              <strong style={{ color: '#475569' }}>This exhibition has concluded.</strong>
+              <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B' }}>
+                Event dates have passed ({formattedDates}). Browse upcoming melas for future exhibitions.
+              </p>
+            </div>
+          )}
+
           <h2 style={{ fontSize: '1.6rem', marginBottom: '1rem' }}>About This Exhibition</h2>
           <p style={{ fontSize: '1.05rem', lineHeight: 1.8, color: 'var(--color-text)', whiteSpace: 'pre-line', marginBottom: '2rem' }}>
             {event.description}
@@ -186,8 +204,8 @@ const EventDetails = () => {
                 <Calendar size={20} />
               </div>
               <div>
-                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Date</span>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{formattedDate}</div>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Date Range</span>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{formattedDates}</div>
               </div>
             </div>
 
@@ -226,9 +244,15 @@ const EventDetails = () => {
         {/* Right Column: RSVP & Artisan Action Card */}
         <div>
           <div className="card" style={{ position: 'sticky', top: '100px', borderTop: '4px solid var(--color-secondary)' }}>
-            <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>Attend This Mela</h3>
+            <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>
+              {currentStatus === 'ongoing' ? 'Visit Today' : currentStatus === 'closed' ? 'Exhibition Closed' : 'Attend This Mela'}
+            </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
-              Reserve your spot to receive venue passes and schedule alerts.
+              {currentStatus === 'ongoing'
+                ? 'Event is happening today! Get your live entry pass.'
+                : currentStatus === 'closed'
+                ? 'This event has concluded. Stay tuned for upcoming dates.'
+                : 'Reserve your spot to receive venue passes and schedule alerts.'}
             </p>
 
             {isRegistered ? (
@@ -241,18 +265,25 @@ const EventDetails = () => {
                   We look forward to seeing you at Kaarigar Expo.
                 </p>
               </div>
+            ) : currentStatus === 'closed' ? (
+              <button 
+                className="btn btn-outline btn-block btn-lg"
+                style={{ marginBottom: '1rem', opacity: 0.6 }}
+                disabled
+              >
+                Registration Closed
+              </button>
             ) : (
               <button 
                 onClick={handleOpenRsvp}
                 className="btn btn-secondary btn-block btn-lg"
                 style={{ marginBottom: '1rem' }}
-                disabled={event.status !== 'upcoming'}
               >
-                RSVP for Event
+                {currentStatus === 'ongoing' ? 'Get Today’s Entry Pass' : 'RSVP for Event'}
               </button>
             )}
 
-            {isKaarigar && (
+            {isKaarigar && currentStatus !== 'closed' && (
               <Link 
                 to="/kaarigar/apply" 
                 state={{ selectedEventId: event.id }}

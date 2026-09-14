@@ -16,6 +16,7 @@ const UpcomingMelas = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('all');
+  const [selectedStatusTab, setSelectedStatusTab] = useState('active'); // 'active', 'ongoing', 'upcoming', 'closed', 'all'
 
   // RSVP modal
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -30,14 +31,14 @@ const UpcomingMelas = () => {
   const { showSuccess, showError } = useToast();
 
   useEffect(() => {
-    document.title = "Upcoming Melas | Kaarigar Expo";
+    document.title = "Melas & Exhibitions | Kaarigar Expo";
     loadEvents();
   }, []);
 
   const loadEvents = async () => {
     try {
       setLoading(true);
-      const data = await eventService.getUpcomingEvents();
+      const data = await eventService.getAllEvents();
       setEvents(data);
     } catch (err) {
       console.error('Failed to load melas:', err);
@@ -45,6 +46,17 @@ const UpcomingMelas = () => {
       setLoading(false);
     }
   };
+
+  // Status Counts
+  const statusCounts = useMemo(() => {
+    return {
+      active: events.filter(e => e.status === 'ongoing' || e.status === 'upcoming').length,
+      ongoing: events.filter(e => e.status === 'ongoing').length,
+      upcoming: events.filter(e => e.status === 'upcoming').length,
+      closed: events.filter(e => e.status === 'closed').length,
+      all: events.length
+    };
+  }, [events]);
 
   // Compute unique cities for filtering
   const cityOptions = useMemo(() => {
@@ -63,6 +75,14 @@ const UpcomingMelas = () => {
   // Filter events
   const filteredEvents = useMemo(() => {
     return events.filter(e => {
+      // Status filter
+      if (selectedStatusTab === 'active' && e.status !== 'upcoming' && e.status !== 'ongoing') {
+        return false;
+      }
+      if (selectedStatusTab === 'ongoing' && e.status !== 'ongoing') return false;
+      if (selectedStatusTab === 'upcoming' && e.status !== 'upcoming') return false;
+      if (selectedStatusTab === 'closed' && e.status !== 'closed') return false;
+
       const matchesSearch = searchQuery === '' || 
         e.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         e.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -74,7 +94,7 @@ const UpcomingMelas = () => {
 
       return matchesSearch && matchesCity;
     });
-  }, [events, searchQuery, selectedCity]);
+  }, [events, searchQuery, selectedCity, selectedStatusTab]);
 
   const openRsvpModal = (event) => {
     setSelectedEvent(event);
@@ -126,14 +146,38 @@ const UpcomingMelas = () => {
         </p>
       </div>
 
-      {/* Controls: Search & City Filter */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem', background: 'var(--color-surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
+      {/* Controls: Search, Status & City Filter */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2.5rem', background: 'var(--color-surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
         <SearchBar 
           value={searchQuery}
           onChange={setSearchQuery}
           onClear={() => setSearchQuery('')}
           placeholder="Search melas by title, city, or craft..."
         />
+
+        {/* Status Selection Tabs */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-text-muted)', marginRight: '0.25rem' }}>
+            Event Timeline:
+          </span>
+          {[
+            { id: 'active', label: 'Active (Live & Upcoming)', count: statusCounts.active },
+            { id: 'ongoing', label: 'Live Now', count: statusCounts.ongoing },
+            { id: 'upcoming', label: 'Upcoming', count: statusCounts.upcoming },
+            { id: 'closed', label: 'Past / Concluded', count: statusCounts.closed },
+            { id: 'all', label: 'All Melas', count: statusCounts.all }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSelectedStatusTab(tab.id)}
+              className={`btn btn-sm ${selectedStatusTab === tab.id ? 'btn-primary' : 'btn-outline'}`}
+              style={{ borderRadius: 'var(--radius-full)', padding: '0.35rem 0.85rem', fontSize: '0.82rem' }}
+            >
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
 
         {cityOptions.length > 1 && (
           <FilterBar

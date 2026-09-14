@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Users, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, Users, ArrowRight, Radio, Lock } from 'lucide-react';
 import StatusBadge from '../common/StatusBadge';
+import { calculateEventStatus, formatEventDates } from '../../utils/eventUtils';
 
 const defaultEventImage = 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=800&q=80';
 
@@ -9,7 +10,6 @@ const EventCard = ({ event, onRsvpClick }) => {
   const {
     id,
     name,
-    date,
     startTime,
     endTime,
     location,
@@ -17,16 +17,11 @@ const EventCard = ({ event, onRsvpClick }) => {
     state,
     description,
     image,
-    status = 'upcoming',
     approvedArtisansCount = 0
   } = event;
 
-  const formattedDate = date ? new Date(date).toLocaleDateString('en-IN', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  }) : 'Date TBA';
+  const currentStatus = calculateEventStatus(event);
+  const formattedDates = formatEventDates(event);
 
   return (
     <article className="event-card" id={`event-card-${id}`}>
@@ -39,7 +34,7 @@ const EventCard = ({ event, onRsvpClick }) => {
           onError={(e) => { e.target.src = defaultEventImage; }}
         />
         <div className="event-card-badge">
-          <StatusBadge status={status} />
+          <StatusBadge status={currentStatus} />
         </div>
       </div>
 
@@ -49,7 +44,7 @@ const EventCard = ({ event, onRsvpClick }) => {
         <div className="event-card-meta">
           <div className="event-meta-item">
             <Calendar size={15} />
-            <span>{formattedDate} {startTime ? `• ${startTime}` : ''}</span>
+            <span>{formattedDates} {startTime ? `• ${startTime}` : ''}</span>
           </div>
           <div className="event-meta-item">
             <MapPin size={15} />
@@ -73,13 +68,27 @@ const EventCard = ({ event, onRsvpClick }) => {
           <Link to={`/melas/${id}`} className="btn btn-outline btn-sm">
             View Details
           </Link>
-          {status === 'upcoming' && (
+          {currentStatus === 'ongoing' && (
+            <button 
+              onClick={() => onRsvpClick ? onRsvpClick(event) : null}
+              className="btn btn-primary btn-sm"
+              style={{ background: '#059669', borderColor: '#059669' }}
+            >
+              Visit Today <ArrowRight size={14} />
+            </button>
+          )}
+          {currentStatus === 'upcoming' && (
             <button 
               onClick={() => onRsvpClick ? onRsvpClick(event) : null}
               className="btn btn-secondary btn-sm"
             >
-              RSVP Now <ArrowRight size={14} />
+              RSVP Pass <ArrowRight size={14} />
             </button>
+          )}
+          {currentStatus === 'closed' && (
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+              <Lock size={12} /> Ended
+            </span>
           )}
         </div>
       </div>

@@ -5,6 +5,7 @@ import {
   query, 
   where 
 } from './firebase';
+import { calculateEventStatus } from '../utils/eventUtils';
 
 export const statsService = {
   // Compute Admin Dashboard aggregates dynamically
@@ -18,11 +19,13 @@ export const statsService = {
         getDocs(query(collection(db, 'users'), where('role', '==', 'visitor')))
       ]);
 
-      const events = eventsSnap.docs.map(d => d.data());
+      const events = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       const applications = applicationsSnap.docs.map(d => d.data());
 
       const totalMelas = eventsSnap.size;
-      const upcomingMelas = events.filter(e => e.status === 'upcoming').length;
+      const upcomingMelas = events.filter(e => calculateEventStatus(e) === 'upcoming').length;
+      const ongoingMelas = events.filter(e => calculateEventStatus(e) === 'ongoing').length;
+      const closedMelas = events.filter(e => calculateEventStatus(e) === 'closed').length;
       const totalKaarigars = kaarigarsSnap.size;
       const pendingApplications = applications.filter(a => a.status === 'pending').length;
       const approvedKaarigars = applications.filter(a => a.status === 'approved').length;
@@ -32,6 +35,9 @@ export const statsService = {
       return {
         totalMelas,
         upcomingMelas,
+        ongoingMelas,
+        closedMelas,
+        activeMelas: upcomingMelas + ongoingMelas,
         totalKaarigars,
         pendingApplications,
         approvedKaarigars,

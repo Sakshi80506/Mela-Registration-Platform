@@ -12,25 +12,29 @@ import {
   orderBy, 
   serverTimestamp 
 } from './firebase';
+import { calculateEventStatus } from '../utils/eventUtils';
 
 const EVENTS_COLLECTION = 'events';
 const APPLICATIONS_COLLECTION = 'kaarigarApplications';
 const VISITORS_COLLECTION = 'visitorRegistrations';
 
 export const eventService = {
-  // Get all events with optional status filter
+  // Get all events with dynamic auto-detected status
   async getAllEvents(statusFilter = null) {
     try {
       const eventsRef = collection(db, EVENTS_COLLECTION);
-      let q = eventsRef;
-      if (statusFilter) {
-        q = query(eventsRef, where('status', '==', statusFilter));
-      }
-      const snapshot = await getDocs(q);
+      const snapshot = await getDocs(eventsRef);
       const events = [];
 
       for (const document of snapshot.docs) {
-        const eventData = { id: document.id, ...document.data() };
+        const rawData = document.data();
+        const computedStatus = calculateEventStatus(rawData);
+
+        const eventData = { 
+          id: document.id, 
+          ...rawData,
+          status: computedStatus
+        };
         
         // Fetch approved artisans count dynamically
         try {
@@ -57,8 +61,26 @@ export const eventService = {
           eventData.registeredVisitorsCount = 0;
         }
 
-        events.push(eventData);
+        if (!statusFilter || computedStatus === statusFilter.toLowerCase()) {
+          events.push(eventData);
+        }
       }
+
+      // Sort: ongoing events first, then upcoming (earliest date first), then closed (most recent past first)
+      events.sort((a, b) => {
+        const order = { ongoing: 0, upcoming: 1, closed: 2 };
+        const orderA = order[a.status] ?? 3;
+        const orderB = order[b.status] ?? 3;
+        if (orderA !== orderB) return orderA - orderB;
+
+        const dateA = a.startDate || a.date || '';
+        const dateB = b.startDate || b.date || '';
+        if (a.status === 'closed') {
+          return dateB.localeCompare(dateA); // Past events: recent first
+        }
+        return dateA.localeCompare(dateB); // Upcoming: earliest first
+      });
+
       return events;
     } catch (error) {
       console.error('Error fetching events:', error);
@@ -66,12 +88,19 @@ export const eventService = {
     }
   },
 
-  // Get upcoming events
+  // Get upcoming and ongoing active exhibitions
   async getUpcomingEvents() {
-    return this.getAllEvents('upcoming');
+    try {
+      const allEvents = await this.getAllEvents();
+      // Return events that are either upcoming or currently ongoing
+      return allEvents.filter(e => e.status === 'upcoming' || e.status === 'ongoing');
+    } catch (error) {
+      console.error('Error fetching upcoming/ongoing events:', error);
+      throw error;
+    }
   },
 
-  // Get single event by ID with approved artisans
+  // Get single event by ID with approved artisans and computed status
   async getEventById(eventId) {
     try {
       const docRef = doc(db, EVENTS_COLLECTION, eventId);
@@ -81,7 +110,13 @@ export const eventService = {
         throw new Error('Event not found');
       }
 
-      const eventData = { id: docSnap.id, ...docSnap.data() };
+      const rawData = docSnap.data();
+      const computedStatus = calculateEventStatus(rawData);
+      const eventData = { 
+        id: docSnap.id, 
+        ...rawData,
+        status: computedStatus
+      };
 
       // Fetch approved artisans for this event
       const appQ = query(
@@ -131,12 +166,13 @@ export const eventService = {
     }
   },
 
-  // Create new event (Admin only)
+  // Create new event (Admin only) with auto-computed initial status
   async createEvent(eventData, adminUid) {
     try {
+      const computedStatus = calculateEventStatus(eventData);
       const docData = {
         ...eventData,
-        status: eventData.status || 'upcoming',
+        status: computedStatus,
         createdBy: adminUid || 'admin',
         createdAt: new Date().toISOString()
       };
@@ -148,15 +184,24 @@ export const eventService = {
     }
   },
 
-  // Update event
+  // Update event with auto-recalculated status
   async updateEvent(eventId, updateData) {
     try {
       const docRef = doc(db, EVENTS_COLLECTION, eventId);
-      await updateDoc(docRef, {
+      const docSnap = await getDoc(docRef);
+      const currentData = docSnap.exists() ? docSnap.data() : {};
+
+      const mergedData = { ...currentData, ...updateData };
+      const computedStatus = calculateEventStatus(mergedData);
+
+      const finalUpdate = {
         ...updateData,
+        status: computedStatus,
         updatedAt: new Date().toISOString()
-      });
-      return { id: eventId, ...updateData };
+      };
+
+      await updateDoc(docRef, finalUpdate);
+      return { id: eventId, ...finalUpdate };
     } catch (error) {
       console.error('Error updating event:', error);
       throw error;

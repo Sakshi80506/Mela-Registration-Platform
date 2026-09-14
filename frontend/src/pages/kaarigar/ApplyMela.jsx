@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { eventService } from '../../services/eventService';
 import { applicationService } from '../../services/applicationService';
+import { formatEventDates, calculateEventStatus } from '../../utils/eventUtils';
+import StatusBadge from '../../components/common/StatusBadge';
 import FormInput from '../../components/common/FormInput';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
@@ -110,11 +112,15 @@ const ApplyMela = () => {
   };
 
   const eventOptions = [
-    { label: '-- Select an Upcoming Mela --', value: '' },
-    ...events.map(ev => ({
-      label: `${ev.name} (${ev.city}, ${ev.state} • ${ev.date})`,
-      value: ev.id
-    }))
+    { label: '-- Select an Active Mela --', value: '' },
+    ...events.map(ev => {
+      const dates = formatEventDates(ev);
+      const tag = ev.status === 'ongoing' ? '🔴 [LIVE NOW]' : '⏳ [UPCOMING]';
+      return {
+        label: `${tag} ${ev.name} (${ev.city} • ${dates})`,
+        value: ev.id
+      };
+    })
   ];
 
   const selectedEventDetails = events.find(e => e.id === selectedEventId);
@@ -138,9 +144,9 @@ const ApplyMela = () => {
       {events.length === 0 ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <AlertCircle size={48} color="var(--color-warning)" style={{ margin: '0 auto 1rem' }} />
-          <h2 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>No Upcoming Melas Available</h2>
+          <h2 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>No Active Melas Available</h2>
           <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
-            There are currently no upcoming melas open for artisan registration. Please check back soon.
+            There are currently no upcoming or live melas open for artisan registration. Please check back soon.
           </p>
           <Link to="/kaarigar/dashboard" className="btn btn-primary btn-sm">
             Back to Dashboard
@@ -163,11 +169,14 @@ const ApplyMela = () => {
           {selectedEventDetails && (
             <div style={{ background: 'var(--color-bg-alt)', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div>
-                <div style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
-                  {selectedEventDetails.name}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
+                  <div style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '0.95rem' }}>
+                    {selectedEventDetails.name}
+                  </div>
+                  <StatusBadge status={selectedEventDetails.status} />
                 </div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', display: 'flex', gap: '1rem', marginTop: '0.2rem' }}>
-                  <span><Calendar size={13} style={{ display: 'inline' }} /> {selectedEventDetails.date}</span>
+                  <span><Calendar size={13} style={{ display: 'inline' }} /> {formatEventDates(selectedEventDetails)}</span>
                   <span><MapPin size={13} style={{ display: 'inline' }} /> {selectedEventDetails.location}, {selectedEventDetails.city}</span>
                 </div>
               </div>

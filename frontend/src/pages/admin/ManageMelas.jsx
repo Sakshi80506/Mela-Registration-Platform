@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   PlusCircle, 
@@ -10,9 +10,12 @@ import {
   Users, 
   Save,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles,
+  Clock
 } from 'lucide-react';
 import { eventService } from '../../services/eventService';
+import { calculateEventStatus, formatEventDates, getEventStatusInfo } from '../../utils/eventUtils';
 import { useToast } from '../../context/ToastContext';
 import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -23,6 +26,7 @@ import FormInput from '../../components/common/FormInput';
 const ManageMelas = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedStatusTab, setSelectedStatusTab] = useState('all');
   const { showSuccess, showError } = useToast();
 
   // Edit Modal State
@@ -52,10 +56,14 @@ const ManageMelas = () => {
   };
 
   const handleOpenEdit = (event) => {
+    const sDate = event.startDate || event.date || '';
+    const eDate = event.endDate || event.startDate || event.date || '';
     setEditingEvent(event);
     setEditFormData({
       name: event.name,
-      date: event.date,
+      date: sDate,
+      startDate: sDate,
+      endDate: eDate,
       startTime: event.startTime || '10:00',
       endTime: event.endTime || '20:00',
       location: event.location,
@@ -64,17 +72,36 @@ const ManageMelas = () => {
       description: event.description,
       maxArtisans: event.maxArtisans || 50,
       maxVisitors: event.maxVisitors || 2000,
-      status: event.status || 'upcoming',
       image: event.image || ''
     });
   };
+
+  // Compute live auto-detected status inside edit modal
+  const editComputedStatus = useMemo(() => {
+    if (!editFormData.startDate && !editFormData.date) return 'upcoming';
+    return calculateEventStatus({
+      startDate: editFormData.startDate || editFormData.date,
+      date: editFormData.startDate || editFormData.date,
+      endDate: editFormData.endDate || editFormData.startDate || editFormData.date,
+      startTime: editFormData.startTime,
+      endTime: editFormData.endTime
+    });
+  }, [editFormData.startDate, editFormData.date, editFormData.endDate, editFormData.startTime, editFormData.endTime]);
 
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     setSavingEdit(true);
     try {
-      await eventService.updateEvent(editingEvent.id, editFormData);
-      showSuccess(`Event "${editFormData.name}" updated successfully.`);
+      const finalPayload = {
+        ...editFormData,
+        date: editFormData.startDate || editFormData.date,
+        startDate: editFormData.startDate || editFormData.date,
+        endDate: editFormData.endDate || editFormData.startDate || editFormData.date,
+        status: editComputedStatus
+      };
+
+      await eventService.updateEvent(editingEvent.id, finalPayload);
+      showSuccess(`Event "${editFormData.name}" updated successfully (Status: ${editComputedStatus.toUpperCase()}).`);
       setEditingEvent(null);
       loadEvents();
     } catch (err) {
@@ -84,6 +111,21 @@ const ManageMelas = () => {
       setSavingEdit(false);
     }
   };
+
+  // Status Counts
+  const statusCounts = useMemo(() => {
+    return {
+      all: events.length,
+      ongoing: events.filter(e => e.status === 'ongoing').length,
+      upcoming: events.filter(e => e.status === 'upcoming').length,
+      closed: events.filter(e => e.status === 'closed').length
+    };
+  }, [events]);
+
+  const filteredEvents = useMemo(() => {
+    if (selectedStatusTab === 'all') return events;
+    return events.filter(e => e.status === selectedStatusTab);
+  }, [events, selectedStatusTab]);
 
   const handleConfirmDelete = async () => {
     if (!deletingEvent) return;
@@ -123,11 +165,31 @@ const ManageMelas = () => {
         </Link>
       </div>
 
-      {events.length === 0 ? (
+      {/* Filter Tabs */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        {[
+          { id: 'all', label: 'All Exhibitions', count: statusCounts.all },
+          { id: 'ongoing', label: 'Live / Ongoing', count: statusCounts.ongoing },
+          { id: 'upcoming', label: 'Upcoming', count: statusCounts.upcoming },
+          { id: 'closed', label: 'Closed / Past', count: statusCounts.closed }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setSelectedStatusTab(tab.id)}
+            className={`btn btn-sm ${selectedStatusTab === tab.id ? 'btn-primary' : 'btn-outline'}`}
+            style={{ borderRadius: 'var(--radius-full)', padding: '0.4rem 1rem' }}
+          >
+            {tab.label} ({tab.count})
+          </button>
+        ))}
+      </div>
+
+      {filteredEvents.length === 0 ? (
         <EmptyState
-          title="No Melas Scheduled"
-          message="There are no exhibitions in the system. Create your first mela to start accepting applications."
-          actionText="Create Mela"
+          title="No Melas in this Category"
+          message={`There are no exhibitions currently matching the "${selectedStatusTab}" status.`}
+          actionText="Schedule New Mela"
           actionLink="/admin/create-mela"
         />
       ) : (
@@ -136,16 +198,16 @@ const ManageMelas = () => {
             <thead>
               <tr>
                 <th>Event Name</th>
-                <th>Date & Time</th>
+                <th>Date & Schedule</th>
                 <th>Location</th>
                 <th>Approved Kaarigars</th>
                 <th>Visitor RSVPs</th>
-                <th>Status</th>
+                <th>Auto-Status</th>
                 <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {events.map((ev) => (
+              {filteredEvents.map((ev) => (
                 <tr key={ev.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -153,7 +215,7 @@ const ManageMelas = () => {
                         <img 
                           src={ev.image} 
                           alt="" 
-                          style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }} 
+                          style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-sm)', objectFit: 'cover' }} 
                         />
                       )}
                       <div>
@@ -163,7 +225,7 @@ const ManageMelas = () => {
                     </div>
                   </td>
                   <td>
-                    <div>{ev.date}</div>
+                    <div style={{ fontWeight: 600 }}>{formatEventDates(ev)}</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
                       {ev.startTime || '10:00'} - {ev.endTime || '20:00'}
                     </div>
@@ -222,28 +284,47 @@ const ManageMelas = () => {
       <Modal
         isOpen={!!editingEvent}
         onClose={() => setEditingEvent(null)}
-        title={`Edit Mela: ${editingEvent?.name}`}
+        title={`Edit Mela: ${editingEvent?.name || ''}`}
         maxWidth="750px"
       >
         {editingEvent && (
           <form onSubmit={handleSaveEdit}>
             <FormInput
               id="edit-name"
-              label="Event Name"
+              label="Mela Name"
               required
               value={editFormData.name}
               onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
             />
 
-            <div className="form-grid-3">
+            <div className="form-grid-2">
               <FormInput
-                id="edit-date"
+                id="edit-start-date"
                 type="date"
-                label="Date"
+                label="Start Date"
                 required
-                value={editFormData.date}
-                onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+                value={editFormData.startDate || editFormData.date || ''}
+                onChange={(e) => {
+                  const s = e.target.value;
+                  setEditFormData(prev => ({
+                    ...prev,
+                    date: s,
+                    startDate: s,
+                    endDate: (!prev.endDate || prev.endDate < s) ? s : prev.endDate
+                  }));
+                }}
               />
+              <FormInput
+                id="edit-end-date"
+                type="date"
+                label="End Date (Optional / Multi-day)"
+                value={editFormData.endDate || editFormData.startDate || editFormData.date || ''}
+                min={editFormData.startDate || editFormData.date}
+                onChange={(e) => setEditFormData({ ...editFormData, endDate: e.target.value })}
+              />
+            </div>
+
+            <div className="form-grid-2">
               <FormInput
                 id="edit-start-time"
                 type="time"
@@ -258,6 +339,30 @@ const ManageMelas = () => {
                 value={editFormData.endTime}
                 onChange={(e) => setEditFormData({ ...editFormData, endTime: e.target.value })}
               />
+            </div>
+
+            {/* Live Auto-Status Preview Banner */}
+            <div style={{
+              background: 'var(--color-bg-alt)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1rem 1.25rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              flexWrap: 'wrap'
+            }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-primary)', textTransform: 'uppercase' }}>
+                  <Sparkles size={13} color="var(--color-secondary-dark)" /> Auto-Calculated Status
+                </div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>
+                  {getEventStatusInfo(editComputedStatus).description}
+                </div>
+              </div>
+              <StatusBadge status={editComputedStatus} />
             </div>
 
             <div className="form-grid-2">
@@ -295,7 +400,7 @@ const ManageMelas = () => {
               onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
             />
 
-            <div className="form-grid-3">
+            <div className="form-grid-2">
               <FormInput
                 id="edit-max-artisans"
                 type="number"
@@ -309,19 +414,6 @@ const ManageMelas = () => {
                 label="Max Visitors"
                 value={editFormData.maxVisitors}
                 onChange={(e) => setEditFormData({ ...editFormData, maxVisitors: e.target.value })}
-              />
-              <FormInput
-                id="edit-status"
-                type="select"
-                label="Event Status"
-                value={editFormData.status}
-                onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
-                options={[
-                  { label: 'Upcoming', value: 'upcoming' },
-                  { label: 'Ongoing', value: 'ongoing' },
-                  { label: 'Completed', value: 'completed' },
-                  { label: 'Cancelled', value: 'cancelled' }
-                ]}
               />
             </div>
 
