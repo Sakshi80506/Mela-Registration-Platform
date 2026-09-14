@@ -58,6 +58,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         { label: 'Dashboard', path: '/visitor/dashboard', icon: LayoutDashboard },
         { label: 'Upcoming Melas', path: '/melas', icon: Compass },
         { label: 'My Registrations', path: '/visitor/registrations', icon: Ticket },
+        { label: 'My Profile', path: '/visitor/profile', icon: User },
       ];
     }
   };

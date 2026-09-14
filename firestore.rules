@@ -6,81 +6,44 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
-    function isUser(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-    function isAdmin() {
-      return isAuthenticated() && getUserRole() == 'admin';
-    }
-    function isKaarigar() {
-      return isAuthenticated() && getUserRole() == 'kaarigar';
-    }
 
     // Users Collection
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write, create, update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow delete: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow read: if true;
+      allow create, update, write: if isAuthenticated();
+      allow delete: if isAuthenticated();
     }
 
     // Events Collection
     match /events/{eventId} {
-      allow read: if true; // Publicly viewable
-      allow create, update, delete, write: if isAdmin();
+      allow read: if true;
+      allow create, update, delete, write: if isAuthenticated();
     }
 
     // Kaarigars Collection (Artisan profiles)
     match /kaarigars/{kaarigarId} {
-      allow read: if true; // Publicly viewable
-      allow create: if isAuthenticated();
-      allow update, write: if isAuthenticated() && (
-        kaarigarId == request.auth.uid || 
-        resource == null || 
-        resource.data.userId == request.auth.uid || 
-        request.resource.data.userId == request.auth.uid || 
-        isAdmin()
-      );
-      allow delete: if isAuthenticated() && (
-        kaarigarId == request.auth.uid || 
-        resource.data.userId == request.auth.uid || 
-        isAdmin()
-      );
+      allow read: if true;
+      allow create, update, write, delete: if isAuthenticated();
     }
 
     // Kaarigar Applications
     match /kaarigarApplications/{applicationId} {
-      allow read: if true; // Publicly viewable for approved artisan showcases on events
-      allow create: if isAuthenticated();
-      allow update, write: if isAuthenticated() && (
-        resource.data.kaarigarId == request.auth.uid || 
-        request.resource.data.kaarigarId == request.auth.uid || 
-        isAdmin()
-      );
-      allow delete: if isAuthenticated() && (
-        resource.data.kaarigarId == request.auth.uid || 
-        isAdmin()
-      );
+      allow read: if true;
+      allow create, update, write, delete: if isAuthenticated();
     }
 
     // Visitor Registrations (RSVPs)
     match /visitorRegistrations/{registrationId} {
-      allow read: if true; // Allows event visitor counts and individual pass validation
-      allow create: if true; // Allows registered or guest visitors
-      allow update, write, delete: if isAuthenticated() && (resource.data.visitorId == request.auth.uid || isAdmin());
+      allow read: if true;
+      allow create: if true;
+      allow update, write, delete: if isAuthenticated();
     }
 
     // Event Reviews & Feedback Collection
     match /eventReviews/{reviewId} {
-      allow read: if true; // Publicly viewable for event reviews and ratings
-      allow create: if isAuthenticated(); // Logged-in Kaarigars and Visitors can review
-      allow update, delete: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid || 
-        isAdmin()
-      );
+      allow read: if true;
+      allow create, update, write: if isAuthenticated();
+      allow delete: if isAuthenticated();
     }
   }
 }
-

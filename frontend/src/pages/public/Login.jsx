@@ -69,7 +69,7 @@ const Login = () => {
     if (r === 'admin') {
       navigate('/admin/dashboard', { replace: true });
     } else if (r === 'kaarigar') {
-      navigate('/kaarigar/profile', { replace: true });
+      navigate('/kaarigar/dashboard', { replace: true });
     } else {
       navigate('/visitor/dashboard', { replace: true });
     }

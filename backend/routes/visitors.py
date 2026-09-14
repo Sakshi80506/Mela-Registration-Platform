@@ -7,6 +7,7 @@ from backend.firebase_admin_setup import get_db
 
 router = APIRouter(prefix="/visitors", tags=["Visitors"])
 
+@router.get("/registrations", response_model=List[VisitorRegistrationResponse])
 @router.get("", response_model=List[VisitorRegistrationResponse])
 def get_visitor_registrations(
     event_id: Optional[str] = Query(None, alias="eventId"),
@@ -30,14 +31,16 @@ def get_visitor_registrations(
             data = doc.to_dict()
             data["id"] = doc.id
             
-            # Attach event details
+            # Enrich with event info if possible
             try:
-                ev_doc = db.collection("events").document(data.get("eventId", "")).get()
-                if ev_doc.exists:
-                    ev_data = ev_doc.to_dict()
-                    data["eventName"] = ev_data.get("name")
-                    data["eventDate"] = ev_data.get("date")
-                    data["eventLocation"] = ev_data.get("location")
+                ev_id = data.get("eventId")
+                if ev_id:
+                    ev_doc = db.collection("events").document(ev_id).get()
+                    if ev_doc.exists:
+                        ev_data = ev_doc.to_dict()
+                        data["eventName"] = ev_data.get("name")
+                        data["eventDate"] = ev_data.get("date") or ev_data.get("startDate")
+                        data["eventLocation"] = ev_data.get("location")
             except Exception:
                 pass
                 
@@ -46,37 +49,61 @@ def get_visitor_registrations(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/register", response_model=VisitorRegistrationResponse, status_code=status.HTTP_201_CREATED)
-def register_visitor_for_event(reg: VisitorRegistrationCreate):
+@router.get("/registrations/{reg_id}", response_model=VisitorRegistrationResponse)
+def get_visitor_registration(reg_id: str):
     db = get_db()
     if not db:
         raise HTTPException(status_code=503, detail="Database service not available")
     
-    # Check event exists
-    event_doc = db.collection("events").document(reg.eventId).get()
-    if not event_doc.exists:
-        raise HTTPException(status_code=404, detail="Mela event not found")
+    doc = db.collection("visitorRegistrations").document(reg_id).get()
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Registration not found")
     
-    # Prevent duplicate registration
-    query = db.collection("visitorRegistrations").where("eventId", "==", reg.eventId)
-    if reg.visitorId:
-        dup = list(query.where("visitorId", "==", reg.visitorId).limit(1).stream())
-    else:
-        dup = list(query.where("email", "==", reg.email).limit(1).stream())
-        
-    if dup:
-        raise HTTPException(status_code=400, detail="You have already registered for this Mela.")
+    data = doc.to_dict()
+    data["id"] = doc.id
+    return VisitorRegistrationResponse(**data)
 
-    data = reg.model_dump()
-    data["createdAt"] = datetime.utcnow().isoformat()
+@router.post("/register", response_model=VisitorRegistrationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=VisitorRegistrationResponse, status_code=status.HTTP_201_CREATED)
+def register_visitor(reg: VisitorRegistrationCreate):
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=503, detail="Database service not available")
+    
+    # Check duplicate
+    if reg.visitorId:
+        dup = list(db.collection("visitorRegistrations")
+                   .where("eventId", "==", reg.eventId)
+                   .where("visitorId", "==", reg.visitorId)
+                   .limit(1).stream())
+        if dup:
+            raise HTTPException(status_code=400, detail="You are already registered for this event.")
+    else:
+        dup = list(db.collection("visitorRegistrations")
+                   .where("eventId", "==", reg.eventId)
+                   .where("email", "==", reg.email)
+                   .limit(1).stream())
+        if dup:
+            raise HTTPException(status_code=400, detail="Email already registered for this event.")
+            
+    reg_data = reg.model_dump()
+    reg_data["createdAt"] = datetime.utcnow().isoformat()
     
     doc_ref = db.collection("visitorRegistrations").document()
-    doc_ref.set(data)
-    data["id"] = doc_ref.id
+    doc_ref.set(reg_data)
+    reg_data["id"] = doc_ref.id
+    return VisitorRegistrationResponse(**reg_data)
+
+@router.delete("/registrations/{reg_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{reg_id}", status_code=status.HTTP_204_NO_CONTENT)
+def cancel_visitor_registration(reg_id: str):
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=503, detail="Database service not available")
     
-    ev_data = event_doc.to_dict()
-    data["eventName"] = ev_data.get("name")
-    data["eventDate"] = ev_data.get("date")
-    data["eventLocation"] = ev_data.get("location")
+    doc_ref = db.collection("visitorRegistrations").document(reg_id)
+    if not doc_ref.get().exists:
+        raise HTTPException(status_code=404, detail="Registration not found")
     
-    return VisitorRegistrationResponse(**data)
+    doc_ref.delete()
+    return None

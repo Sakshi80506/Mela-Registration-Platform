@@ -156,26 +156,25 @@ export const AuthProvider = ({ children }) => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      let targetRole = (desiredRole || 'visitor').toLowerCase();
+      const targetRole = (desiredRole || 'visitor').toLowerCase();
       localStorage.setItem('active_portal_role', targetRole);
 
-      // Fetch base profile
+      // Fetch base profile from Firestore
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
       let userData = userDocSnap.exists() ? userDocSnap.data() : {};
 
-      // If user logs in as Admin, check if they are admin or save admin
-      if (targetRole === 'admin' && userData.role && userData.role !== 'admin') {
-        targetRole = userData.role;
-        localStorage.setItem('active_portal_role', targetRole);
-      } else {
-        // Sync the chosen role into Firestore
-        await setDoc(userDocRef, { role: targetRole, updatedAt: new Date().toISOString() }, { merge: true });
-      }
+      // Persist the chosen role into Firestore so user is synced
+      await setDoc(userDocRef, {
+        name: userData.name || user.displayName || (targetRole === 'admin' ? 'Administrator' : 'User'),
+        email: user.email,
+        role: targetRole,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
 
       const activeProfile = {
         uid: user.uid,
-        name: user.displayName || userData.name || 'User',
+        name: user.displayName || userData.name || (targetRole === 'admin' ? 'Administrator' : 'User'),
         email: user.email,
         phone: userData.phone || '',
         ...userData,
@@ -344,6 +343,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update basic user profile fields (name, phone, city, state, etc.)
+  const updateUserProfile = async (updates) => {
+    if (!currentUser) return;
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      await setDoc(userDocRef, { ...updates, updatedAt: new Date().toISOString() }, { merge: true });
+      // Also update Firebase display name if name changed
+      if (updates.name && updates.name !== currentUser.displayName) {
+        await updateProfile(currentUser, { displayName: updates.name });
+      }
+      const updated = { ...userProfile, ...updates };
+      setUserProfile(updated);
+      return updated;
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+  };
+
   const value = {
     currentUser,
     userProfile,
@@ -360,7 +378,8 @@ export const AuthProvider = ({ children }) => {
     switchRole,
     logout,
     refreshKaarigarProfile,
-    fetchUserProfile
+    fetchUserProfile,
+    updateUserProfile
   };
 
   return (

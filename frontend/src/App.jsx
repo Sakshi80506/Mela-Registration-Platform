@@ -27,6 +27,7 @@ import MyApplications from './pages/kaarigar/MyApplications';
 // Visitor Pages
 import VisitorDashboard from './pages/visitor/VisitorDashboard';
 import MyRegistrations from './pages/visitor/MyRegistrations';
+import VisitorProfile from './pages/visitor/VisitorProfile';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -83,6 +84,7 @@ function App() {
               <Route index element={<Navigate to="/visitor/dashboard" replace />} />
               <Route path="dashboard" element={<VisitorDashboard />} />
               <Route path="registrations" element={<MyRegistrations />} />
+              <Route path="profile" element={<VisitorProfile />} />
             </Route>
 
             {/* ADMIN PORTAL (Protected) */}

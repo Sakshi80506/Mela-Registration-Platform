@@ -52,7 +52,7 @@ const Navbar = () => {
   const getProfilePath = () => {
     if (role === 'admin') return '/admin/profile';
     if (role === 'kaarigar') return '/kaarigar/profile';
-    return '/visitor/dashboard';
+    return '/visitor/profile';
   };
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
