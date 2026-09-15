@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
-  Sparkles, Menu, X, LogIn, UserPlus, LogOut,
+  Menu, X, LogIn, UserPlus, LogOut,
   LayoutDashboard, User, ShieldCheck, Palette, Ticket,
   ChevronDown, ExternalLink
 } from 'lucide-react';

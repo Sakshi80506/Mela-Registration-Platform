@@ -12,7 +12,6 @@ import {
   Send, 
   Ticket, 
   LogOut, 
-  Sparkles, 
   X,
   Compass
 } from 'lucide-react';
@@ -74,7 +73,6 @@ const Sidebar = ({ isOpen, onClose }) => {
       <aside className={`dashboard-sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <div className="sidebar-brand">
-            <Sparkles size={20} color="var(--color-secondary)" />
             <span>Kaarigar Expo</span>
           </div>
           {onClose && (
