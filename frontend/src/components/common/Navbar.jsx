@@ -65,7 +65,6 @@ const Navbar = () => {
       <div className="container">
         <div className="navbar-inner">
           <Link to="/" className="brand-logo" onClick={closeMobileMenu}>
-            <Sparkles size={22} />
             <span>Kaarigar Expo</span>
             <span className="brand-badge">Mela</span>
           </Link>
@@ -180,7 +179,6 @@ const Navbar = () => {
       <div className={`mobile-nav-drawer ${mobileMenuOpen ? 'open' : ''}`}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
           <div className="brand-logo" style={{ fontSize: '1.15rem' }}>
-            <Sparkles size={18} />
             <span>Kaarigar Expo</span>
           </div>
           <button onClick={closeMobileMenu} aria-label="Close menu" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }}>

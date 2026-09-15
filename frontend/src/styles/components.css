@@ -887,6 +887,12 @@
 }
 
 @media (max-width: 992px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .nav-btn-desktop {
+    display: none !important;
+  }
   .event-details-grid {
     grid-template-columns: 1fr;
     gap: 2rem;
@@ -904,11 +910,11 @@
   h2 { font-size: 1.5rem; }
   .hero-title { font-size: 2.2rem; }
   
-  .nav-links, .nav-actions .btn-text {
-    display: none;
+  .nav-links, .nav-btn-desktop {
+    display: none !important;
   }
   .mobile-menu-btn {
-    display: block;
+    display: flex;
   }
   
   .dashboard-shell {
