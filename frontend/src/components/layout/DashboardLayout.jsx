@@ -55,10 +55,13 @@ const DashboardLayout = () => {
             <button 
               className="mobile-menu-btn" 
               onClick={() => setSidebarOpen(true)}
-              aria-label="Open sidebar"
+              aria-label="Open sidebar menu"
             >
               <Menu size={22} />
             </button>
+            <Link to="/" className="brand-logo" style={{ fontSize: '1.15rem', textDecoration: 'none' }} title="Kaarigar Expo">
+              <span>Kaarigar Expo</span>
+            </Link>
             <div className="dashboard-topbar-badge-group">
               <button
                 onClick={role !== 'admin' ? handleToggleRole : undefined}
@@ -83,9 +86,6 @@ const DashboardLayout = () => {
                 <span>{roleMeta.label}</span>
                 {role !== 'admin' && <span style={{ fontSize: '0.72rem', opacity: 0.75 }}>⇄</span>}
               </button>
-              <span className="dashboard-portal-label">
-                Portal
-              </span>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { 
@@ -13,12 +13,21 @@ import {
   Ticket, 
   LogOut, 
   X,
-  Compass
+  Compass,
+  Home,
+  ShieldCheck,
+  Palette
 } from 'lucide-react';
 
+const ROLE_META = {
+  admin: { label: 'Admin', color: 'var(--color-primary)', bg: 'var(--color-bg-alt)', Icon: ShieldCheck },
+  kaarigar: { label: 'Kaarigar', color: 'var(--color-secondary-dark)', bg: '#FFF8E7', Icon: Palette },
+  visitor: { label: 'Visitor', color: 'var(--color-success)', bg: '#E8F5E9', Icon: Ticket },
+};
+
 const Sidebar = ({ isOpen, onClose }) => {
-  const { role, userProfile, logout } = useAuth();
-  const { showSuccess } = useToast();
+  const { currentUser, role, userProfile, logout, switchRole } = useAuth();
+  const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -29,8 +38,26 @@ const Sidebar = ({ isOpen, onClose }) => {
       navigate('/');
     } catch (e) {
       console.error(e);
+      showError(e.message || 'Logout failed');
     }
   };
+
+  const handleToggleRole = async () => {
+    if (role === 'admin') return;
+    const targetRole = role === 'kaarigar' ? 'visitor' : 'kaarigar';
+    try {
+      await switchRole(targetRole);
+      showSuccess(`Switched to ${targetRole === 'kaarigar' ? 'Kaarigar' : 'Visitor'} Portal`);
+      if (onClose) onClose();
+      navigate(targetRole === 'kaarigar' ? '/kaarigar/dashboard' : '/visitor/dashboard');
+    } catch (e) {
+      console.error(e);
+      showError(e.message || 'Failed to switch role');
+    }
+  };
+
+  const roleMeta = role ? (ROLE_META[role] || ROLE_META.visitor) : ROLE_META.visitor;
+  const RoleIcon = roleMeta.Icon;
 
   const getNavItems = () => {
     if (role === 'admin') {
@@ -44,7 +71,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         { label: 'Admin Profile', path: '/admin/profile', icon: User },
       ];
     } else if (role === 'kaarigar') {
-
       return [
         { label: 'Dashboard', path: '/kaarigar/dashboard', icon: LayoutDashboard },
         { label: 'My Profile', path: '/kaarigar/profile', icon: User },
@@ -87,12 +113,69 @@ const Sidebar = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        <div style={{ padding: '1.25rem 1.5rem 0.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-secondary)' }}>
-            {role || 'User'} Workspace
-          </span>
-          <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {userProfile?.name || 'Portal User'}
+        {/* User Card in Sidebar */}
+        <div style={{
+          padding: '1.15rem 1.25rem',
+          borderBottom: '1px solid rgba(255,255,255,0.1)',
+          background: 'rgba(0,0,0,0.12)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.6rem' }}>
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: 'var(--color-secondary)',
+              color: 'var(--color-primary-dark)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              flexShrink: 0
+            }}>
+              {(userProfile?.name || currentUser?.email || 'U')[0].toUpperCase()}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#FFFFFF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {userProfile?.name || 'Portal User'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.65)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {currentUser?.email}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '0.4rem', borderTop: '1px dashed rgba(255,255,255,0.15)' }}>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+              background: roleMeta.bg,
+              color: roleMeta.color,
+              padding: '0.2rem 0.55rem',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.72rem',
+              fontWeight: 700
+            }}>
+              <RoleIcon size={11} /> {roleMeta.label}
+            </span>
+
+            {role !== 'admin' && (
+              <button
+                onClick={handleToggleRole}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-secondary)',
+                  fontSize: '0.75rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
+                Switch to {role === 'kaarigar' ? 'Visitor' : 'Kaarigar'} ⇄
+              </button>
+            )}
           </div>
         </div>
 
@@ -112,6 +195,18 @@ const Sidebar = ({ isOpen, onClose }) => {
               </NavLink>
             );
           })}
+
+          <div style={{ margin: '0.5rem 0', borderTop: '1px solid rgba(255,255,255,0.08)' }} />
+
+          <Link
+            to="/"
+            onClick={onClose}
+            className="sidebar-link"
+            style={{ color: 'rgba(255, 255, 255, 0.8)' }}
+          >
+            <Home size={18} />
+            <span>View Public Site</span>
+          </Link>
         </nav>
 
         <div className="sidebar-footer">
@@ -130,3 +225,4 @@ const Sidebar = ({ isOpen, onClose }) => {
 };
 
 export default Sidebar;
+
