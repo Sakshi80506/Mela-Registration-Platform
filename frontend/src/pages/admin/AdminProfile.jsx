@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Shield, User, Mail, Sparkles, Key, CheckCircle2,
-  Trash2, AlertTriangle, Edit3, Save, Phone, MapPin
+  Trash2, AlertTriangle, Edit3, Save, Phone, MapPin, LogOut
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -18,9 +18,20 @@ const indianStates = [
 ];
 
 const AdminProfile = () => {
-  const { currentUser, userProfile, updateUserProfile, deleteAccount } = useAuth();
+  const { currentUser, userProfile, updateUserProfile, deleteAccount, logout } = useAuth();
   const { showSuccess, showError } = useToast();
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      showSuccess('Logged out successfully');
+      navigate('/');
+    } catch (err) {
+      console.error('Logout error:', err);
+      showError(err.message || 'Failed to logout');
+    }
+  };
 
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -268,6 +279,26 @@ const AdminProfile = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Account Session / Logout */}
+      <div className="card" style={{ padding: '1.5rem 2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', border: '1px solid var(--color-border)' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-primary)', fontWeight: 700, fontSize: '0.95rem' }}>
+            <LogOut size={18} /> Sign Out / Logout
+          </div>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', marginTop: '0.2rem', marginBottom: 0 }}>
+            Safely log out of your administrator account on this device.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="btn btn-outline"
+          style={{ borderColor: 'var(--color-primary)', color: 'var(--color-primary)', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}
+        >
+          <LogOut size={16} /> Logout
+        </button>
       </div>
 
       {/* Danger Zone */}

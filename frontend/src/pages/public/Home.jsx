@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  Sparkles, 
-  ArrowRight, 
-  Compass, 
-  Palette, 
-  Award, 
-  HeartHandshake, 
-  CheckCircle2, 
-  Calendar, 
+import {
+  Sparkles,
+  ArrowRight,
+  Compass,
+  Palette,
+  Award,
+  HeartHandshake,
+  CheckCircle2,
+  Calendar,
   Users,
   ChevronRight
 } from 'lucide-react';
@@ -23,7 +23,6 @@ import FormInput from '../../components/common/FormInput';
 import { visitorService } from '../../services/visitorService';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import HeroSlider from '../../components/common/HeroSlider';
 
 const Home = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
@@ -144,7 +143,14 @@ const Home = () => {
             </div>
 
             <div style={{ position: 'relative' }}>
-              <HeroSlider height="360px" />
+              <div style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', boxShadow: 'var(--shadow-xl)', border: '3px solid rgba(215, 168, 89, 0.4)' }}>
+                <img
+                  src="/src/assets/hero.jpg"
+                  alt="Indian handicraft exhibition showcase"
+                  style={{ width: '100%', height: '360px', objectFit: 'cover' }}
+                  onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1599818817290-7f2bf8f23f6d?auto=format&fit=crop&w=800&q=80"; }}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -168,16 +174,16 @@ const Home = () => {
           {loadingEvents ? (
             <LoadingSpinner message="Loading upcoming melas..." />
           ) : upcomingEvents.length === 0 ? (
-            <EmptyState 
-              title="No upcoming melas available" 
+            <EmptyState
+              title="No upcoming melas available"
               message="Check back soon for new artisan exhibitions and cultural fairs."
             />
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
               {upcomingEvents.map((event) => (
-                <EventCard 
-                  key={event.id} 
-                  event={event} 
+                <EventCard
+                  key={event.id}
+                  event={event}
                   onRsvpClick={openRsvpModal}
                 />
               ))}
@@ -439,16 +445,16 @@ const Home = () => {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-            <button 
-              type="button" 
-              onClick={() => setRsvpModalOpen(false)} 
+            <button
+              type="button"
+              onClick={() => setRsvpModalOpen(false)}
               className="btn btn-outline btn-sm"
               disabled={submittingRsvp}
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="btn btn-secondary btn-sm"
               disabled={submittingRsvp}
             >

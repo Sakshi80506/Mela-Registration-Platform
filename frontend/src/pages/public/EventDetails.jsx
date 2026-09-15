@@ -143,7 +143,7 @@ const EventDetails = () => {
   const currentStatus = calculateEventStatus(event);
 
   return (
-    <div className="container" style={{ padding: '2.5rem 1.5rem 5rem' }}>
+    <div className="container event-details-page">
       {/* Navigation Breadcrumb */}
       <div style={{ marginBottom: '1.5rem' }}>
         <Link to="/melas" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-primary)', fontWeight: 600, fontSize: '0.9rem' }}>
@@ -152,30 +152,30 @@ const EventDetails = () => {
       </div>
 
       {/* Hero Banner Area */}
-      <div style={{ position: 'relative', borderRadius: 'var(--radius-xl)', overflow: 'hidden', height: '380px', marginBottom: '2.5rem', boxShadow: 'var(--shadow-lg)' }}>
+      <div className="event-details-hero">
         <img
           src={event.image || defaultEventImage}
           alt={`Banner for ${event.name}`}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          className="event-details-hero-img"
           onError={(e) => { e.target.src = defaultEventImage; }}
         />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(18, 30, 53, 0.9) 0%, rgba(18, 30, 53, 0.2) 60%)' }} />
+        <div className="event-details-hero-overlay" />
         
-        <div style={{ position: 'absolute', bottom: '2rem', left: '2rem', right: '2rem', color: '#FFFFFF' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+        <div className="event-details-hero-content">
+          <div className="event-details-hero-badges">
             <StatusBadge status={currentStatus} />
-            <span style={{ fontSize: '0.85rem', background: 'rgba(255,255,255,0.2)', padding: '0.2rem 0.6rem', borderRadius: 'var(--radius-sm)', backdropFilter: 'blur(4px)' }}>
+            <span className="event-details-location-badge">
               {event.city}, {event.state}
             </span>
           </div>
-          <h1 style={{ color: '#FFFFFF', fontSize: '2.4rem', lineHeight: 1.2 }}>{event.name}</h1>
+          <h1 className="event-details-title">{event.name}</h1>
         </div>
       </div>
 
       {/* Main Grid: Details & Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2.5rem', marginBottom: '4rem' }}>
+      <div className="event-details-grid">
         {/* Left Column: Description & Key Info */}
-        <div>
+        <div className="event-details-main-content">
           {/* Live Status Notification Box */}
           {currentStatus === 'ongoing' && (
             <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 'var(--radius-md)', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -203,51 +203,51 @@ const EventDetails = () => {
             {event.description}
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', background: 'var(--color-surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
+          <div className="event-info-cards-grid">
+            <div className="event-info-box-item">
+              <div className="event-info-box-icon">
                 <Calendar size={20} />
               </div>
-              <div>
-                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Date Range</span>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{formattedDates}</div>
+              <div className="event-info-box-text">
+                <span className="event-info-box-label">Date Range</span>
+                <div className="event-info-box-value">{formattedDates}</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
+            <div className="event-info-box-item">
+              <div className="event-info-box-icon">
                 <Clock size={20} />
               </div>
-              <div>
-                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Timing</span>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{event.startTime || '10:00 AM'} - {event.endTime || '08:00 PM'}</div>
+              <div className="event-info-box-text">
+                <span className="event-info-box-label">Timing</span>
+                <div className="event-info-box-value">{event.startTime || '10:00 AM'} - {event.endTime || '08:00 PM'}</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
+            <div className="event-info-box-item">
+              <div className="event-info-box-icon">
                 <MapPin size={20} />
               </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Venue Location</span>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{event.location}, {event.city}, {event.state}</div>
+              <div className="event-info-box-text">
+                <span className="event-info-box-label">Venue Location</span>
+                <div className="event-info-box-value">{event.location}, {event.city}, {event.state}</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{ width: '42px', height: '42px', borderRadius: 'var(--radius-md)', background: 'var(--color-bg-alt)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)' }}>
+            <div className="event-info-box-item">
+              <div className="event-info-box-icon">
                 <Users size={20} />
               </div>
-              <div>
-                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Artisans & Visitors</span>
-                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{event.approvedArtisansCount} Kaarigars • {event.registeredVisitorsCount} RSVPs</div>
+              <div className="event-info-box-text">
+                <span className="event-info-box-label">Artisans & Visitors</span>
+                <div className="event-info-box-value">{event.approvedArtisansCount} Kaarigars • {event.registeredVisitorsCount} RSVPs</div>
               </div>
             </div>
           </div>
 
           {/* Map Location & Directions Section */}
-          <div style={{ marginTop: '2rem', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
-            <div style={{ padding: '1.25rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', borderBottom: '1px solid var(--color-border-light)' }}>
+          <div className="event-map-card">
+            <div className="event-map-header">
               <div>
                 <h3 style={{ fontSize: '1.2rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
                   <Navigation size={18} color="var(--color-secondary-dark)" /> Venue Location & Directions
@@ -268,7 +268,7 @@ const EventDetails = () => {
             </div>
 
             {/* Embedded Google Maps View */}
-            <div style={{ width: '100%', height: '280px', background: '#E2E8F0', position: 'relative' }}>
+            <div className="event-map-frame-wrap">
               <iframe
                 title={`Map of ${event.name} venue`}
                 width="100%"
@@ -287,8 +287,8 @@ const EventDetails = () => {
         </div>
 
         {/* Right Column: RSVP & Artisan Action Card */}
-        <div>
-          <div className="card" style={{ position: 'sticky', top: '100px', borderTop: '4px solid var(--color-secondary)' }}>
+        <div className="event-details-sidebar">
+          <div className="card event-action-card">
             <h3 style={{ fontSize: '1.3rem', marginBottom: '0.5rem' }}>
               {currentStatus === 'ongoing' ? 'Visit Today' : currentStatus === 'closed' ? 'Exhibition Closed' : 'Attend This Mela'}
             </h3>

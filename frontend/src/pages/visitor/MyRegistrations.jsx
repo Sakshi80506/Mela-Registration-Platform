@@ -194,18 +194,18 @@ const MyRegistrations = () => {
         isOpen={!!selectedPass}
         onClose={() => setSelectedPass(null)}
         title="Official Visitor Entry Pass"
-        maxWidth="500px"
+        maxWidth="440px"
       >
         {selectedPass && (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ background: 'linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%)', color: '#FFFFFF', padding: '1.75rem', borderRadius: 'var(--radius-lg)', marginBottom: '1.5rem', position: 'relative' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-secondary)', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                <Sparkles size={15} /> Kaarigar Expo Pass
+            <div style={{ background: 'linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%)', color: '#FFFFFF', padding: '1.25rem 1rem', borderRadius: 'var(--radius-lg)', marginBottom: '1.25rem', position: 'relative' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: 'var(--color-secondary)', fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                <Sparkles size={14} /> Kaarigar Expo Pass
               </div>
-              <h3 style={{ color: '#FFFFFF', fontSize: '1.4rem', marginBottom: '0.5rem' }}>
+              <h3 style={{ color: '#FFFFFF', fontSize: '1.25rem', marginBottom: '0.4rem', lineHeight: 1.3 }}>
                 {selectedPass.event?.name}
               </h3>
-              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+              <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
                 {selectedPass.event?.location}, {selectedPass.event?.city}
               </p>
               
@@ -213,38 +213,45 @@ const MyRegistrations = () => {
                 href={getEventMapUrl(selectedPass.event)}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--color-secondary)', fontSize: '0.82rem', fontWeight: 600, background: 'rgba(255,255,255,0.1)', padding: '0.3rem 0.75rem', borderRadius: 'var(--radius-full)', textDecoration: 'none' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--color-secondary)', fontSize: '0.78rem', fontWeight: 600, background: 'rgba(255,255,255,0.12)', padding: '0.25rem 0.65rem', borderRadius: 'var(--radius-full)', textDecoration: 'none' }}
               >
-                <Navigation size={13} /> Get Venue Directions <ExternalLink size={11} />
+                <Navigation size={12} /> Get Venue Directions <ExternalLink size={10} />
               </a>
 
-              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed rgba(255,255,255,0.2)', display: 'flex', justifyContent: 'space-around', fontSize: '0.85rem' }}>
+              <div style={{ marginTop: '0.85rem', paddingTop: '0.85rem', borderTop: '1px dashed rgba(255,255,255,0.2)', display: 'flex', justifyContent: 'space-around', fontSize: '0.82rem' }}>
                 <div>
-                  <div style={{ opacity: 0.7, fontSize: '0.75rem' }}>DATE</div>
+                  <div style={{ opacity: 0.7, fontSize: '0.72rem' }}>DATE</div>
                   <div style={{ fontWeight: 700 }}>{formatEventDates(selectedPass.event)}</div>
                 </div>
                 <div>
-                  <div style={{ opacity: 0.7, fontSize: '0.75rem' }}>ATTENDEES</div>
+                  <div style={{ opacity: 0.7, fontSize: '0.72rem' }}>ATTENDEES</div>
                   <div style={{ fontWeight: 700 }}>{selectedPass.numberOfVisitors} Pax</div>
                 </div>
               </div>
             </div>
 
-            <div style={{ background: 'var(--color-bg-alt)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', marginBottom: '1.5rem' }}>
-              <div style={{ width: '120px', height: '120px', margin: '0 auto 1rem', background: '#FFFFFF', borderRadius: 'var(--radius-md)', padding: '0.75rem', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <QrCode size={100} color="var(--color-primary)" />
+            <div style={{ background: 'var(--color-bg-alt)', borderRadius: 'var(--radius-lg)', padding: '1rem', marginBottom: '1.25rem', border: '1px solid var(--color-border)' }}>
+              <div style={{ width: '100px', height: '100px', margin: '0 auto 0.75rem', background: '#FFFFFF', borderRadius: 'var(--radius-md)', padding: '0.5rem', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <QrCode size={85} color="var(--color-primary)" />
               </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-primary)' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--color-primary)', letterSpacing: '0.05em' }}>
                 PASS CODE: {selectedPass.id.slice(0, 10).toUpperCase()}
               </div>
-              <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.2rem', marginBottom: 0 }}>
                 Show this QR pass or code at the registration desk for seamless entry.
               </p>
             </div>
 
-            <button onClick={() => setSelectedPass(null)} className="btn btn-outline btn-block">
-              Close Pass
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                type="button"
+                onClick={() => setSelectedPass(null)}
+                className="btn btn-primary btn-block"
+                style={{ padding: '0.65rem 1rem' }}
+              >
+                Close Pass
+              </button>
+            </div>
           </div>
         )}
       </Modal>

@@ -118,8 +118,8 @@ const EventReviews = ({ eventId, eventName }) => {
       </div>
 
       {/* Ratings Score & Breakdown Overview */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 280px) 1fr', gap: '2rem', background: 'var(--color-surface)', padding: '1.75rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', marginBottom: '2.5rem' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', borderRight: '1px solid var(--color-border)', paddingRight: '1.5rem' }}>
+      <div className="event-reviews-overview">
+        <div className="reviews-score-box">
           <div style={{ fontSize: '3.2rem', fontWeight: 800, color: 'var(--color-primary)', lineHeight: 1 }}>
             {feedbackData.totalCount > 0 ? feedbackData.averageRating : '—'}
           </div>
@@ -139,7 +139,7 @@ const EventReviews = ({ eventId, eventName }) => {
         </div>
 
         {/* Breakdown Bars */}
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.4rem' }}>
+        <div className="reviews-bars-column">
           {[5, 4, 3, 2, 1].map((s) => {
             const count = feedbackData.breakdown[s] || 0;
             const pct = feedbackData.totalCount > 0 ? Math.round((count / feedbackData.totalCount) * 100) : 0;
