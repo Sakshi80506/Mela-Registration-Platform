@@ -894,6 +894,9 @@
   .event-action-card {
     position: static;
   }
+  .topbar-user-name, .topbar-user-email {
+    max-width: 140px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -923,7 +926,29 @@
   }
   
   .dashboard-topbar {
-    padding: 0 1rem;
+    padding: 0 0.85rem;
+    height: 60px;
+    gap: 0.5rem;
+  }
+  .dashboard-portal-label {
+    display: none;
+  }
+  .topbar-user-email {
+    display: none;
+  }
+  .topbar-btn-text {
+    display: none;
+  }
+  .topbar-action-btn {
+    padding: 0.35rem 0.55rem;
+  }
+  .topbar-logout-btn {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.78rem;
+  }
+  .topbar-user-name {
+    font-size: 0.8rem;
+    max-width: 110px;
   }
   .dashboard-content-area {
     padding: 1.25rem 1rem;
@@ -984,6 +1009,22 @@
 }
 
 @media (max-width: 480px) {
+  .dashboard-topbar {
+    padding: 0 0.6rem;
+    gap: 0.35rem;
+  }
+  .dashboard-topbar-user {
+    display: none;
+  }
+  .dashboard-topbar-right {
+    gap: 0.4rem;
+  }
+  .topbar-action-btn {
+    padding: 0.35rem 0.5rem;
+  }
+  .topbar-logout-btn {
+    padding: 0.35rem 0.55rem;
+  }
   .event-details-hero {
     height: 240px;
   }
